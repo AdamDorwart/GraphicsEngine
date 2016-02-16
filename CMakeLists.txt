@@ -7,6 +7,7 @@ set(SOURCES
 	src/main.cpp
 	src/Logger.cpp
 	src/Util.cpp
+	src/Matrix.cpp
 	src/Window.cpp
 	src/Shader.cpp
 	src/Mesh.cpp)

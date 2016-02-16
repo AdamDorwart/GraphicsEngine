@@ -33,6 +33,12 @@ struct Datum {
 	Vec3f p; // Position
 	Vec3f n; // Normal
 	Vec3f c; // Color
+
+	operator std::string() {
+		return "{p:"+((std::string)p)+
+				",n:"+((std::string)n)+
+				",c:"+((std::string)p)+"}";
+	}
 };
 
 class Mesh {
