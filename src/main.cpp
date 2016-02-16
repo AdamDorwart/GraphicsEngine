@@ -6,28 +6,7 @@
 #include "Logger.h"
 #include "Window.h"
 #include "Shader.h"
-
-GLuint CreateVertexBuf() {
-	float points[] = {
-	   0.0f,  0.5f,  0.0f,
-	   0.5f, -0.5f,  0.0f,
-	  -0.5f, -0.5f,  0.0f
-	};
-
-	GLuint vbo = 0;
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, 9 * sizeof (float), points, GL_STATIC_DRAW);
-
-	GLuint vao = 0;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	return vao;
-}
+#include "Mesh.h"
 
 int main(int argc, char *argv[]) {
 	assert(Logger::start());
@@ -35,7 +14,9 @@ int main(int argc, char *argv[]) {
 	Window window = Window(2560, 1440);
 	window.toggleFPS();
 
-	GLuint vao = CreateVertexBuf();
+	Mesh mesh = Mesh();
+	mesh.parseOFF("plane.off");
+	mesh.edgeCollapse(13,12);
 	
 	Shader shader = Shader();
 	shader.init();
@@ -50,8 +31,7 @@ int main(int argc, char *argv[]) {
         
   		shader.enable();
 
-        glBindVertexArray (vao);
-        glDrawArrays (GL_TRIANGLES, 0, 3);
+  		mesh.render();
 
         window.finalizeFrame();
     }

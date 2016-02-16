@@ -1,5 +1,5 @@
 #pragma once
-#include <math>
+#include <cmath>
 
 struct Vec3f
 {
@@ -55,10 +55,10 @@ struct Vec2f
 	float u;
 	float v;
 
-	Vector2f() {
+	Vec2f() {
 	}
 
-	Vector2f(float _u, float _v) {
+	Vec2f(float _u, float _v) {
 		u = _u;
 		v = _v;
 	}
@@ -69,20 +69,20 @@ struct Vec2f
 		v *= mag;
 	}
 
-	inline Vec2f operator + (Vec2f v) {
-		return Vec2f(u + v.u, v + v.v);
+	inline Vec2f operator + (Vec2f b) {
+		return Vec2f(u + b.u, v + b.v);
 	}
 
-	inline Vec2f operator - (Vec2f v) {
-		return Vec2f(u - v.u, v - v.v);
+	inline Vec2f operator - (Vec2f b) {
+		return Vec2f(u - b.u, v - b.v);
 	}
 
 	inline Vec2f operator * (float s) {
 		return Vec2f(u * s, v * s);
 	}
 
-	inline float dot(Vec2f v) {
-		return u * v.u + v * v.v;
+	inline float dot(Vec2f b) {
+		return u * b.u + v * b.v;
 	}
 
 	inline float magnitude() {
