@@ -7,11 +7,13 @@
 #include <vector>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include "Vector.h"
+#include <glm/glm.hpp>
 
 #ifndef MODEL_PATH
 #define MODEL_PATH std::string("../media/")
 #endif
+
+using namespace glm;
 
 /* A Mesh is a type of object that contains a graph of vertices comprimising
  * triangle faces that describe a 3D geometry that can be rendered by
@@ -30,15 +32,9 @@ struct Triangle {
 using VSet = std::set<IndexType>;
 
 struct Datum {
-	Vec3f p; // Position
-	Vec3f n; // Normal
-	Vec3f c; // Color
-
-	operator std::string() {
-		return "{p:"+((std::string)p)+
-				",n:"+((std::string)n)+
-				",c:"+((std::string)p)+"}";
-	}
+	vec3 p; // Position
+	vec3 n; // Normal
+	vec3 c; // Color
 };
 
 class Mesh {

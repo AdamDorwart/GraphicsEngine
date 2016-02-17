@@ -136,10 +136,10 @@ void Mesh::setupBuffers() {
 	glVertexAttribPointer(POSITION_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(Datum), 0);
 
 	glEnableVertexAttribArray(NORMAL_LOCATION);
-	glVertexAttribPointer(NORMAL_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(Datum), (void*)sizeof(Vec3f));
+	glVertexAttribPointer(NORMAL_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(Datum), (void*)sizeof(vec3));
 
 	glEnableVertexAttribArray(COLOR_LOCATION);
-	glVertexAttribPointer(COLOR_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(Datum), (void*)(2*sizeof(Vec3f)));
+	glVertexAttribPointer(COLOR_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(Datum), (void*)(2*sizeof(vec3)));
 
 	glBindVertexArray(0);
 
