@@ -3,7 +3,7 @@
 #include <stdarg.h>
 
 #ifndef LOG_FILE
-#define LOG_FILE (char*)"log.txt"
+#define LOG_FILE "log.txt"
 #endif
 
 class Logger {

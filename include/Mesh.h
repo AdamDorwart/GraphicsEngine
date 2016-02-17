@@ -8,9 +8,10 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include "CoordFrame.h"
 
 #ifndef MODEL_PATH
-#define MODEL_PATH std::string("../media/")
+#define MODEL_PATH "../media/"
 #endif
 
 using namespace glm;
@@ -48,7 +49,7 @@ class Mesh {
 		unsigned int dataBufferMaxSize;
 		unsigned int indexBufferMaxSize;
 
-		std::unordered_map<IndexType, VSet> vAdjs; // Vertex-Adj list
+		std::unordered_map<IndexType, VSet> vAdjs; // Vertex-Face Adj list
 		std::unordered_map<IndexType, Triangle> faces; // Indexed Face list
 	public:
 		// Buffer IDs
@@ -59,11 +60,13 @@ class Mesh {
 		Mesh();
 		~Mesh();
 
-		void render();
+		void render(CoordFrame* frame);
 
 		bool parseOFF(const char* filename);
 
 		bool edgeCollapse(IndexType v1, IndexType v2);
+
+		void createVertexNormals();
 
 		void setupBuffers();
 

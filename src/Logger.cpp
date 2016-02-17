@@ -3,7 +3,7 @@
 #include <time.h>
 #include <stdio.h>
 
-char* Logger::m_logFile = LOG_FILE;
+char* Logger::m_logFile = (char*)LOG_FILE;
 
 bool Logger::start() {
 	FILE* file = fopen(m_logFile, "w");

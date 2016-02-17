@@ -22,38 +22,39 @@
 #include <GL/glew.h>
 #include <string>
 
-#define INVALID_UNIFORM_LOCATION 0xffffffff
 #define GLCheckError() (glGetError() == GL_NO_ERROR)
 
 #ifndef SHADER_PATH
-#define SHADER_PATH std::string("../src/shaders/")
+#define SHADER_PATH "../src/shaders/"
 #endif
 
+using ShaderObjList = std::list<GLuint>;
 
 /*! Handles GLSL shaders.  It can load the code from a file or read straight
  * from a char array. */
 class Shader
 {
-public:
-	Shader();
-	~Shader();
+	public:
+		Shader();
+		~Shader();
 
-	char* readFile(const char *filename);
+		virtual bool init();
 
-	virtual bool init();
+		void enable();
+		
+	protected:
+		char* readFile(const char *filename);
 
-	void enable();
+		bool addShader(GLenum ShaderType, const char* pFilename);
 
-	bool addShader(GLenum ShaderType, const char* pFilename);
+		bool finalize();
 
-	bool finalize();
+		GLint getUniformLocation(const char* pUniformName);
 
-	GLint getUniformLocation(const char* pUniformName);
+		GLint getProgramParam(GLint param);
 
-	GLint getProgramParam(GLint param);
-
-private:
-	GLuint m_shaderProg;
-	typedef std::list<GLuint> ShaderObjList;
-	ShaderObjList m_shaderObjList;
+	private:
+		GLuint m_shaderProg;
+		
+		ShaderObjList m_shaderObjList;
 };

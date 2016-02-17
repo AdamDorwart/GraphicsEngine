@@ -15,7 +15,7 @@ Mesh::~Mesh() {
 	
 }
 
-void Mesh::render() {
+void Mesh::render(CoordFrame* frame) {
 	glBindVertexArray(VAO);
 
 	glDrawElements(GL_TRIANGLES, indicies.size(), IndexTypeGL,(void*)0);
@@ -86,7 +86,7 @@ bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
 							// Also can't be adjacent to another removed face
 							for (IndexType face_k : removedFaces) {
 								if (face_i_adj != face_k) {
-									// We've found an face adjacent to the removed
+									// We've found a face adjacent to the removed
 									// face that our current face must now be adjacent
 									// to. Update current faces adjaceny and move on
 									// to next face.
@@ -114,6 +114,28 @@ bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
 	updateVBO();
 
 	return true;
+}
+
+void Mesh::createVertexNormals() {
+	std::vector<vec3> faceNormals;
+	faceNormals.resize(faces.size());
+	for (auto face : faces) {
+		vec3 v0 = buffer[face.second.v[0]].p;
+		vec3 v1 = buffer[face.second.v[1]].p;
+
+		faceNormals[face.first] = cross(v0,v1);
+	}
+
+	for (auto vertex : vAdjs) {
+		vec3 vTot = vec3(0);
+		int i = 0;
+		for (auto face : vertex.second) {
+			vTot = vTot + faceNormals[face];
+			i++;
+		}
+		vTot = vTot * (1.0f/i);
+		buffer[vertex.first].n = normalize(vTot);
+	}
 }
 
 void Mesh::setupBuffers() {
@@ -171,7 +193,7 @@ void Mesh::updateVBO() {
 
 bool Mesh::parseOFF(const char* filename) {
 	// Read file
-	std::ifstream infile((MODEL_PATH + filename));
+	std::ifstream infile(std::string(MODEL_PATH) + filename);
     std::string line;
     std::vector<std::string> tokens;
 	std::vector<std::string> faceTokens;
@@ -179,7 +201,7 @@ bool Mesh::parseOFF(const char* filename) {
     bool hasReadSize = false;
 
     if (!infile.is_open() || infile.bad() || !infile.good() || infile.fail()) {
-    	Logger::err("Error opening file [%s]", (MODEL_PATH + filename).c_str());
+    	Logger::err("Error opening file [%s]", (std::string(MODEL_PATH) + filename).c_str());
     	return false;
     }
 
@@ -240,5 +262,6 @@ bool Mesh::parseOFF(const char* filename) {
     }
 
     setupBuffers();
+    createVertexNormals();
     return true;
 }

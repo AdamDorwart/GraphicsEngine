@@ -50,9 +50,9 @@ char* Shader::readFile(const char *filename)
 	char* shaderFile = 0;
 	
     //Open the file
-	FILE* fp = fopen((SHADER_PATH + filename).c_str() , "rb");
+	FILE* fp = fopen((std::string(SHADER_PATH) + filename).c_str() , "rb");
 	if(!fp) {
-		Logger::err("File doesn't exist [%s]", (SHADER_PATH + filename).c_str());
+		Logger::err("File doesn't exist [%s]", (std::string(SHADER_PATH) + filename).c_str());
         exit(EXIT_FAILURE);
     }
     
@@ -149,8 +149,8 @@ bool Shader::finalize()
 	}
 
 	// Delete the intermediate shader objects that have been added to the program
-	for (ShaderObjList::iterator it = m_shaderObjList.begin(); it != m_shaderObjList.end(); it++) {
-		glDeleteShader(*it);
+	for (auto shader : m_shaderObjList) {
+		glDeleteShader(shader);
 	}
 
 	m_shaderObjList.clear();
@@ -167,11 +167,10 @@ void Shader::enable()
 
 GLint Shader::getUniformLocation(const char* pUniformName)
 {
-	GLuint Location = glGetUniformLocation(m_shaderProg, pUniformName);
+	GLint Location = glGetUniformLocation(m_shaderProg, pUniformName);
 
-	if (Location == INVALID_UNIFORM_LOCATION) {
-		Logger::err(
-			"Warning! Unable to get the location of uniform '%s'\n", pUniformName);
+	if (Location == -1) {
+		Logger::err("Warning! Unable to get the location of uniform '%s'\n", pUniformName);
 	}
 
 	return Location;
