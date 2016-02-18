@@ -159,9 +159,12 @@ bool Shader::finalize()
 }
 
 
-void Shader::enable()
-{
+void Shader::enable() {
 	glUseProgram(m_shaderProg);
+}
+
+void Shader::disable() {
+	glUseProgram(0);
 }
 
 

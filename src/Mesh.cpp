@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 using namespace Util;
 
@@ -16,6 +17,8 @@ Mesh::Mesh() {
 Mesh::Mesh(const Mesh& m) {
 	indicies = m.indicies;
 	buffer = m.buffer;
+	bufferSize = m.bufferSize;
+	buffer.resize(2*bufferSize);
 
 	vAdjs = m.vAdjs;
 	faces = m.faces;
@@ -35,13 +38,44 @@ void Mesh::render(CoordFrame* frame) {
 	glBindVertexArray(0);
 }
 
+
+// Debugging function - delete asap
+void Mesh::renderEdge(IndexType v1, IndexType v2) {
+ 	Datum vec1 = buffer[v1];
+	Datum vec2 = buffer[v2];
+	vec1.c = {1.0, 0, 0};
+	vec2.c = {1.0, 0, 0};
+	Datum vertices[] = { vec1, vec2};
+
+	GLuint vbo, vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(POSITION_LOCATION);
+	glVertexAttribPointer(POSITION_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(Datum), 0);
+
+	glEnableVertexAttribArray(NORMAL_LOCATION);
+	glVertexAttribPointer(NORMAL_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(Datum), (void*)sizeof(vec3));
+
+	glEnableVertexAttribArray(COLOR_LOCATION);
+	glVertexAttribPointer(COLOR_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(Datum), (void*)(2*sizeof(vec3)));
+
+	glEnableVertexAttribArray(VISIBLE_LOCATION);
+	glVertexAttribPointer(VISIBLE_LOCATION, 1, GL_FLOAT, GL_FALSE, sizeof(Datum), (void*)(3*sizeof(vec3)));
+	glDrawArrays(GL_LINES, 0, 2);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), NULL, GL_STATIC_DRAW);
+	glBindVertexArray(0);
+}
+
 bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
 	VSet* v1Adj = &vAdjs[v1];
 	VSet* v2Adj = &vAdjs[v2];
 
 	// Removed Faces = v1 intersect v2
 	// O(2*(v1Adj.size+v2Adj.size)-1) ; Linear in # Adj
-	VSet removedFaces; // Size will be 1 or 2
+	VSet removedFaces;
 	set_intersection(v1Adj->begin(), v1Adj->end(), 
 					 v2Adj->begin(), v2Adj->end(),
 					 std::inserter(removedFaces, removedFaces.begin()));
@@ -57,26 +91,31 @@ bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
 						removedFaces.begin(), removedFaces.end(),
     					std::inserter(vN, vN.end()));
 
-	// Remove old vertices, add new
-	// O(2) ; Constant
-	vAdjs.erase(v1);
-	vAdjs.erase(v2);
-	auto insertResult = vAdjs.emplace(v1, vN);
+	// New vertex index = end of buffer
+	IndexType vNindex = bufferSize++;
+
+	// Add new vertex to vertex adjacency list
+	auto insertResult = vAdjs.emplace(vNindex, vN);
 	if (!insertResult.second) {
 		// Insert failed - Something bad happend
-		Logger::err("Unable to insert new vertex, this shouldn't happen. Verify edgeCollapse algorithm.\n");
+		Logger::err("Unable to insert new vertex, index already exists. This shouldn't happen. Verify edgeCollapse algorithm.\n");
 		return false;
 	}
 	
+	// New vertex is the midpoint of it's predecessors
 	Datum newData;
-	newData.p.x = (buffer[v1].p.x + buffer[v2].p.x)/2.0;
-	newData.p.y = (buffer[v1].p.y + buffer[v2].p.y)/2.0;
-	newData.p.z = (buffer[v1].p.z + buffer[v2].p.z)/2.0;
-	buffer[v1] = newData;
+	newData.p = (buffer[v1].p + buffer[v2].p)/2.0f;
+	newData.n = (buffer[v1].n + buffer[v2].n)/2.0f;
+	newData.c = (buffer[v1].c + buffer[v2].c)/2.0f;
+	newData.v = 1;
+	buffer[vNindex] = newData;
+
+	// Set old verticies to invisible so faces get culled by Geometry shader
+	buffer[v1].v = 0;
+	buffer[v2].v = 0;
 
 	// Store iterator to new vertex inside vAdjs
 	auto vNit = insertResult.first;
-	IndexType vNindex = vNit->first;
 	VSet* vNptr = &(vNit->second);
 
 	// Iterate through all faces that use the new vertex
@@ -86,7 +125,6 @@ bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
 		for (int i = 0; i < 3; i++) {
 			if (faces[faceInd].v[i] == v1 || faces[faceInd].v[i] == v2) {
 				faces[faceInd].v[i] = vNindex;
-				Logger::info("Changing face(%d) vertex(%d->%d)\n", faceInd, indicies[3*faceInd+i], vNindex);
 				indicies[3*faceInd+i] = vNindex;
 			}
 		}
@@ -126,10 +164,9 @@ bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
 
 	// Remove faces sharing the old edge
 	// O(removedFaces.size) ; Constant
-	for (IndexType face : removedFaces) {
-		Logger::info("Removeing face: %d:{%d,%d,%d}\n", face, faces[face].v[0], faces[face].v[1], faces[face].v[2]);
-		faces.erase(face);
-	}
+	//for (IndexType face : removedFaces) {
+	//	faces.erase(face);
+	//}
 
 	// Upload the mesh data to the graphics driver
 	updateVBO();
@@ -163,7 +200,7 @@ void Mesh::createVertexNormals() {
 
 void Mesh::setupBuffers() {
 	// Size of buffer is 2*(# vertices) to leave room for vertices created through edge collapse
-	dataBufferMaxSize = 2 * sizeof(buffer[0]) * buffer.size();
+	dataBufferMaxSize = 2 * sizeof(buffer[0]) * bufferSize;
 	// Number of faces shouldn't increase
 	indexBufferMaxSize = sizeof(indicies[0]) * indicies.size();
 
@@ -185,6 +222,9 @@ void Mesh::setupBuffers() {
 
 	glEnableVertexAttribArray(COLOR_LOCATION);
 	glVertexAttribPointer(COLOR_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(Datum), (void*)(2*sizeof(vec3)));
+
+	glEnableVertexAttribArray(VISIBLE_LOCATION);
+	glVertexAttribPointer(VISIBLE_LOCATION, 1, GL_FLOAT, GL_FALSE, sizeof(Datum), (void*)(3*sizeof(vec3)));
 
 	glBindVertexArray(0);
 
@@ -224,7 +264,7 @@ bool Mesh::parseOFF(const char* filename) {
 	bool hasReadSize = false;
 
 	IndexType face_i = 0;
-	IndexType vertex_i = 0;
+	bufferSize = 0;
 
 	if (!infile.is_open() || infile.bad() || !infile.good() || infile.fail()) {
 		Logger::err("Error opening file [%s]", (std::string(MODEL_PATH) + filename).c_str());
@@ -274,8 +314,10 @@ bool Mesh::parseOFF(const char* filename) {
 			d.c.y = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 			d.c.z = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 
+			d.v = 1.0; // Visible
+
 			buffer.push_back(d);
-			vAdjs[vertex_i++] = VSet();
+			vAdjs[bufferSize++] = VSet();
 
 		} else if (tokens.size() == 4) {
 			// Reading face
@@ -341,6 +383,9 @@ bool Mesh::parseOFF(const char* filename) {
 			}
 		}
 	}
+
+	// Anticipate new verticies for edge collapse
+	buffer.resize(2*bufferSize);
 
     setupBuffers();
     createVertexNormals();

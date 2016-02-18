@@ -35,9 +35,10 @@ struct Triangle {
 using VSet = std::set<IndexType>;
 
 struct Datum {
-	vec3 p; // Position
-	vec3 n; // Normal
-	vec3 c; // Color
+	vec3 p;  // Position
+	vec3 n;  // Normal
+	vec3 c;  // Color
+	float v; // Visibility
 };
 
 class Mesh {
@@ -45,6 +46,7 @@ class Mesh {
 		//Storage vectors
 		std::vector<IndexType> indicies;
 		std::vector<Datum> buffer;
+		IndexType bufferSize;
 
 		unsigned int VAO;
 		unsigned int bufferIds[2];
@@ -57,13 +59,14 @@ class Mesh {
 		// Buffer IDs
 		enum { DATA_BUFFER = 0, INDEX_BUFFER, NUM_OF_BUFFERS};
 		// Layout location of data sent to shaders
-		enum { POSITION_LOCATION = 0, NORMAL_LOCATION, COLOR_LOCATION};
+		enum { POSITION_LOCATION = 0, NORMAL_LOCATION, COLOR_LOCATION, VISIBLE_LOCATION};
 
 		Mesh();
 		Mesh(const Mesh& m);
 		~Mesh();
 
 		void render(CoordFrame* frame);
+		void renderEdge(IndexType v1, IndexType v2);
 
 		bool parseOFF(const char* filename);
 

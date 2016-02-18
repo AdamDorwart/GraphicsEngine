@@ -60,16 +60,16 @@ int main(int argc, char *argv[]) {
 
 	// 1.0472 rad = 60 deg FOV
 	frame->setPerspective(1.0472, width, height, 1.0, 1000.0);
-	vec3 c = vec3(0, 0, -2.0);
+	vec3 c = vec3(0, 0, -5.0);
 	vec3 d = vec3(0, 0, 1);
 	vec3 up = vec3(0, 1, 0);
 	frame->setCamera(c, d, up);
 
 	Mesh meshA = Mesh();
-	meshA.parseOFF("ico.off");
+	meshA.parseOFF("testpatch.off");
 
 	Mesh meshB = meshA;
-	//meshB.edgeCollapse(13,12);
+	//meshB.edgeCollapse(11,23);
 	meshB.edgeCollapse(0,1);
 	
 	SimpleShader shader = SimpleShader(frame);
@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) {
 	glEnable(GL_DEPTH_TEST);
 
 	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 	glFrontFace(GL_CW);
 
 	// Run until user closes the window
@@ -93,6 +94,11 @@ int main(int argc, char *argv[]) {
   		} else {
   			meshB.render(frame);
   		}
+
+  		//shader.disable();
+
+  		// Draw removed edge
+  		//meshA.renderEdge(0, 1);
 
         window.finalizeFrame();
 

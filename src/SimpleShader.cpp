@@ -22,6 +22,11 @@ bool SimpleShader::init() {
 		return false;
 	}
 
+	if (!addShader(GL_GEOMETRY_SHADER, "simple.gs")) {
+		Logger::err("Unable to add geometry shader: simple.gs\n");
+		return false;
+	}
+
 	if (!addShader(GL_FRAGMENT_SHADER, "simple.fs")) {
 		Logger::err("Unable to add fragment shader: simple.fs\n");
 		return false;

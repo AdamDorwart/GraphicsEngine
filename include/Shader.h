@@ -41,6 +41,7 @@ class Shader
 		virtual bool init();
 
 		void enable();
+		void disable();
 		
 	protected:
 		char* readFile(const char *filename);
