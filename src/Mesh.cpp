@@ -4,11 +4,23 @@
 #include <algorithm>
 #include <fstream>
 
+#include <glm/gtx/string_cast.hpp>
+
 using namespace Util;
 
 
 Mesh::Mesh() {
 	
+}
+
+Mesh::Mesh(const Mesh& m) {
+	indicies = m.indicies;
+	buffer = m.buffer;
+
+	vAdjs = m.vAdjs;
+	faces = m.faces;
+
+	setupBuffers();
 }
 
 Mesh::~Mesh() {
@@ -34,11 +46,16 @@ bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
 					 v2Adj->begin(), v2Adj->end(),
 					 std::inserter(removedFaces, removedFaces.begin()));
 
-	// New Vertex = (v1 union v2) - (v1 intersect v2)
-	// O(v1Adj.size + v2Adj.size*log(v1Adj.size*v2Adj.size) + removedFaces.size) ; Logrithmic in # Adj
-	VSet vN(*v1Adj);
-	vN.insert(v2Adj->begin(), v2Adj->end());
-	vN.erase(removedFaces.begin(), removedFaces.end());
+	// vUnion = (v1 union v2)
+	// O(v1Adj.size + v2Adj.size) ; Linear in # Adj
+	VSet vUnion(*v1Adj);
+	vUnion.insert(v2Adj->begin(), v2Adj->end());
+	// New Vertex = vUnion - (v1 intersect v2)
+	// O(2*(vUnion.size + removedFaces.size - 1)) ; Linear in # Adj
+	VSet vN;
+	std::set_difference(vUnion.begin(), vUnion.end(), 
+						removedFaces.begin(), removedFaces.end(),
+    					std::inserter(vN, vN.end()));
 
 	// Remove old vertices, add new
 	// O(2) ; Constant
@@ -50,6 +67,7 @@ bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
 		Logger::err("Unable to insert new vertex, this shouldn't happen. Verify edgeCollapse algorithm.\n");
 		return false;
 	}
+	
 	Datum newData;
 	newData.p.x = (buffer[v1].p.x + buffer[v2].p.x)/2.0;
 	newData.p.y = (buffer[v1].p.y + buffer[v2].p.y)/2.0;
@@ -65,9 +83,11 @@ bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
 	for (IndexType faceInd : *vNptr) {
 		Triangle& face = faces[faceInd];
 		// Replace old vertices with new
-		for (IndexType& vi : face.v) {
-			if (vi == v1 || vi == v2) {
-				vi = vNindex;
+		for (int i = 0; i < 3; i++) {
+			if (faces[faceInd].v[i] == v1 || faces[faceInd].v[i] == v2) {
+				faces[faceInd].v[i] = vNindex;
+				Logger::info("Changing face(%d) vertex(%d->%d)\n", faceInd, indicies[3*faceInd+i], vNindex);
+				indicies[3*faceInd+i] = vNindex;
 			}
 		}
 		// Fix face adj
@@ -78,9 +98,9 @@ bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
 			for (IndexType face_i : removedFaces) {
 				// if current face is adjacent to a removed face
 				if (face_adj == face_i) {
-					// We need to find the new adjacent face
+					IndexType faceToRemove = face_adj;
 					// Iterate through the removed face's adjacent faces
-					for (IndexType& face_i_adj : faces[face_i].f) {
+					for (IndexType& face_i_adj : faces[faceToRemove].f) {
 						// Current face can't be adjacent to itself
 						if (face_i_adj != faceInd) {
 							// Also can't be adjacent to another removed face
@@ -90,7 +110,7 @@ bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
 									// face that our current face must now be adjacent
 									// to. Update current faces adjaceny and move on
 									// to next face.
-									face.f[face_adj] = face_i_adj;
+									face.f[faceToRemove] = face_i_adj;
 									b = true; break;
 								}
 							}
@@ -107,6 +127,7 @@ bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
 	// Remove faces sharing the old edge
 	// O(removedFaces.size) ; Constant
 	for (IndexType face : removedFaces) {
+		Logger::info("Removeing face: %d:{%d,%d,%d}\n", face, faces[face].v[0], faces[face].v[1], faces[face].v[2]);
 		faces.erase(face);
 	}
 
@@ -122,8 +143,9 @@ void Mesh::createVertexNormals() {
 	for (auto face : faces) {
 		vec3 v0 = buffer[face.second.v[0]].p;
 		vec3 v1 = buffer[face.second.v[1]].p;
+		vec3 v2 = buffer[face.second.v[2]].p;
 
-		faceNormals[face.first] = cross(v0,v1);
+		faceNormals[face.first] = cross(v0 - v1, v0 - v2);
 	}
 
 	for (auto vertex : vAdjs) {
@@ -136,6 +158,7 @@ void Mesh::createVertexNormals() {
 		vTot = vTot * (1.0f/i);
 		buffer[vertex.first].n = normalize(vTot);
 	}
+	updateVBO();
 }
 
 void Mesh::setupBuffers() {
@@ -194,34 +217,37 @@ void Mesh::updateVBO() {
 bool Mesh::parseOFF(const char* filename) {
 	// Read file
 	std::ifstream infile(std::string(MODEL_PATH) + filename);
-    std::string line;
-    std::vector<std::string> tokens;
+	std::string line;
+	std::vector<std::string> tokens;
 	std::vector<std::string> faceTokens;
-    std::string token;
-    bool hasReadSize = false;
+	std::string token;
+	bool hasReadSize = false;
 
-    if (!infile.is_open() || infile.bad() || !infile.good() || infile.fail()) {
-    	Logger::err("Error opening file [%s]", (std::string(MODEL_PATH) + filename).c_str());
-    	return false;
-    }
+	IndexType face_i = 0;
+	IndexType vertex_i = 0;
 
-    // Clear old mesh data
-    buffer.clear();
-    indicies.clear();
+	if (!infile.is_open() || infile.bad() || !infile.good() || infile.fail()) {
+		Logger::err("Error opening file [%s]", (std::string(MODEL_PATH) + filename).c_str());
+		return false;
+	}
 
-    // Check if header string is valid
-    std::getline(infile, line);
-    if (line.find("OFF") == std::string::npos) {
-    	Logger::err("%s: file does not follow the OFF specification\n", filename);
-    	return false;
-    }
+	// Clear old mesh data
+	buffer.clear();
+	indicies.clear();
 
-    while (std::getline(infile, line)) {
-    	// Remove beginning and ending whitespace
-    	trim(line);
+	// Check if header string is valid
+	std::getline(infile, line);
+	if (line.find("OFF") == std::string::npos) {
+		Logger::err("%s: file does not follow the OFF specification\n", filename);
+		return false;
+	}
 
-    	// Split line
-    	tokens.clear();
+	while (std::getline(infile, line)) {
+		// Remove beginning and ending whitespace
+		trim(line);
+
+		// Split line
+		tokens.clear();
 		split(line, ' ', tokens);
 
 		// Ignore blank/comment line
@@ -249,17 +275,72 @@ bool Mesh::parseOFF(const char* filename) {
 			d.c.z = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 
 			buffer.push_back(d);
+			vAdjs[vertex_i++] = VSet();
+
 		} else if (tokens.size() == 4) {
 			// Reading face
 			if (tokens.at(0).compare("3") != 0) {
 				Logger::err("Error parsing %s: file format uses non-triangle faces (%s)\n", filename, line);
 				return false;
 			}
-			indicies.push_back(std::stoi(tokens.at(1)));
-			indicies.push_back(std::stoi(tokens.at(2)));
-			indicies.push_back(std::stoi(tokens.at(3)));
+			IndexType v0 = std::stoi(tokens.at(1));
+			IndexType v1 = std::stoi(tokens.at(2));
+			IndexType v2 = std::stoi(tokens.at(3));
+
+			indicies.push_back(v0);
+			indicies.push_back(v1);
+			indicies.push_back(v2);
+
+			vAdjs[v0].insert(face_i);
+			vAdjs[v1].insert(face_i);
+			vAdjs[v2].insert(face_i);
+
+			Triangle t;
+			t.v = {v0, v1, v2};
+			t.f = {NULL_INDEX, NULL_INDEX, NULL_INDEX};
+
+			faces[face_i++] = t;
 		}
     }
+
+    // Create Face Adjaceny in Indexed Face list
+	for (auto face : faces) {
+		IndexType v0 = face.second.v[0];
+		IndexType v1 = face.second.v[1];
+		IndexType v2 = face.second.v[2];
+
+		VSet v0Adj = vAdjs[v0];
+		VSet v1Adj = vAdjs[v1];
+		VSet v2Adj = vAdjs[v2];
+
+		// Size will be 1 or 2
+		VSet v0v1Intersect;
+		VSet v1v2Intersect;
+		VSet v0v2Intersect;
+		// Find the adjacent faces to the edge
+		set_intersection(v0Adj.begin(), v0Adj.end(), 
+						 v1Adj.begin(), v1Adj.end(),
+						 std::inserter(v0v1Intersect, v0v1Intersect.begin()));
+		set_intersection(v0Adj.begin(), v0Adj.end(), 
+						 v2Adj.begin(), v2Adj.end(),
+						 std::inserter(v0v2Intersect, v0v2Intersect.begin()));
+		set_intersection(v1Adj.begin(), v1Adj.end(), 
+						 v2Adj.begin(), v2Adj.end(),
+						 std::inserter(v1v2Intersect, v1v2Intersect.begin()));
+
+		// Combine all the faces
+		VSet adjFaces(v0v1Intersect);
+		adjFaces.insert(v1v2Intersect.begin(), v1v2Intersect.end());
+		adjFaces.insert(v0v2Intersect.begin(), v0v2Intersect.end());
+
+		face_i = 0;
+		// Set all the adjacent faces, ignoring the occurance of itself.
+		for (auto adjFace : adjFaces) {
+			if (face.first != adjFace) {
+				face.second.f[face_i++] = adjFace;
+			}
+		}
+	}
 
     setupBuffers();
     createVertexNormals();

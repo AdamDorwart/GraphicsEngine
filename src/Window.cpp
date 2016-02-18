@@ -98,9 +98,8 @@ void Window::initialize(int width, int height, const char* title) {
 	//https://www.opengl.org/wiki/OpenGL_Loading_Library
 	glGetError();
 
-
-	// Set swap interval to 1 to prevent wasted frames
-	glfwSwapInterval(1);
+	// VSync 1 = enable, 0 = disable
+	glfwSwapInterval(0);
 
 	// Set input callback
 	glfwSetKeyCallback(m_glfwWindow, Window::keyCallback);
@@ -148,13 +147,9 @@ void Window::errorCallback(int error, const char* description) {
 }
 
 void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	activeWindows[window]->handleKey(key, scancode, action, mods);
-}
-
-void Window::handleKey(int key, int scancode, int action, int mods) {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        glfwSetWindowShouldClose(m_glfwWindow, GL_TRUE);
-    }
+	for (auto listener : activeWindows[window]->m_inputListeners) {
+		listener->consume(activeWindows[window], key, scancode, action, mods);
+	}
 }
 
 CoordFrame* Window::getCoordFrame() {
@@ -165,4 +160,20 @@ CoordFrame* Window::setCoordFrame(CoordFrame* newCoordFrame) {
 	CoordFrame* oldFrame = m_coordFrame;
 	m_coordFrame = newCoordFrame;
 	return oldFrame;
+}
+
+void Window::subscribe(EventType event, InputListener* listener) {
+	switch (event) {
+		case INPUT_EVENT:
+			m_inputListeners.push_back(listener);
+			break;
+	}
+}
+
+void Window::unsubscribe(EventType event, InputListener* listener) {
+	switch (event) {
+		case INPUT_EVENT:
+			m_inputListeners.remove(listener);
+			break;
+	}
 }

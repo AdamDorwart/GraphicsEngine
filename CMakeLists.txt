@@ -14,6 +14,7 @@ set(SOURCES
 	src/Logger.cpp
 	src/Util.cpp
 	src/Window.cpp
+	src/InputHandler.cpp
 	src/Shader.cpp
 	src/Mesh.cpp
 	src/CoordFrame.cpp

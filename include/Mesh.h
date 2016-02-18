@@ -8,6 +8,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <limits>
 #include "CoordFrame.h"
 
 #ifndef MODEL_PATH
@@ -25,6 +26,7 @@ using namespace glm;
 // Max # Verticies/Faces == # of positive numbers representable by IndexType
 using IndexType = unsigned int; // Must use a default number type
 static const GLenum IndexTypeGL = GL_UNSIGNED_INT; // This must match
+static const IndexType NULL_INDEX = std::numeric_limits<IndexType>::max();
 
 struct Triangle {
 	std::array<IndexType,3> v; // Vertice indexes
@@ -58,6 +60,7 @@ class Mesh {
 		enum { POSITION_LOCATION = 0, NORMAL_LOCATION, COLOR_LOCATION};
 
 		Mesh();
+		Mesh(const Mesh& m);
 		~Mesh();
 
 		void render(CoordFrame* frame);

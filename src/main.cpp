@@ -5,6 +5,7 @@
 
 #include "Logger.h"
 #include "Window.h"
+#include "InputHandler.h"
 #include "SimpleShader.h"
 #include "Mesh.h"
 #include "CoordFrame.h"
@@ -51,25 +52,33 @@ int main(int argc, char *argv[]) {
 	window.toggleFPS();
 	handleGLerror();
 
-	// Changes flat shading
-	glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
+	InputHandler* inputHandler = new InputHandler();
+	window.subscribe(Window::INPUT_EVENT, inputHandler);
 
 	CoordFrame* frame = new CoordFrame();
 	window.setCoordFrame(frame);
 
-	// 60 deg FOV
+	// 1.0472 rad = 60 deg FOV
 	frame->setPerspective(1.0472, width, height, 1.0, 1000.0);
 	vec3 c = vec3(0, 0, -2.0);
 	vec3 d = vec3(0, 0, 1);
 	vec3 up = vec3(0, 1, 0);
 	frame->setCamera(c, d, up);
 
-	Mesh mesh = Mesh();
-	mesh.parseOFF("plane.off");
-	//mesh.edgeCollapse(13,12);
+	Mesh meshA = Mesh();
+	meshA.parseOFF("ico.off");
+
+	Mesh meshB = meshA;
+	//meshB.edgeCollapse(13,12);
+	meshB.edgeCollapse(0,1);
 	
 	SimpleShader shader = SimpleShader(frame);
 	shader.init();
+
+	glEnable(GL_DEPTH_TEST);
+
+	glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CW);
 
 	// Run until user closes the window
 	while (window.isActive()) {
@@ -79,7 +88,11 @@ int main(int argc, char *argv[]) {
 
   		frame->resetWorldMatrix();
 
-  		mesh.render(frame);
+  		if (inputHandler->renderMeshA) {
+  			meshA.render(frame);
+  		} else {
+  			meshB.render(frame);
+  		}
 
         window.finalizeFrame();
 
