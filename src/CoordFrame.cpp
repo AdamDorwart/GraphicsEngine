@@ -43,12 +43,10 @@ void CoordFrame::setPerspective(float _fov, float _width, float _height, float _
 	nearFace = _nearFace;
 	farFace = _farFace;
 	p = perspectiveFov(_fov, _width, _height, _nearFace, _farFace);
-	broadcast();
 }
 
 void CoordFrame::setCamera(vec3& e, vec3& d, vec3& up) {
 	c = lookAt(e, d, up);
-	broadcast();
 }
 
 mat4 CoordFrame::getCamera() {

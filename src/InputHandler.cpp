@@ -1,8 +1,10 @@
 #include "InputHandler.h"
 #include <GLFW/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 InputHandler::InputHandler() {
 	renderMeshA = true;
+	selectedObject = NULL;
 }
 
 InputHandler::~InputHandler() {
@@ -47,6 +49,26 @@ void InputHandler::consume(Window* window, int key, int scancode, int action, in
 			case GLFW_KEY_E:
 				renderMeshA = !renderMeshA;
 				break;
+			case GLFW_KEY_UP:
+				if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(0, 0.5, 0));
+				}
+				break;
+			case GLFW_KEY_DOWN:
+				if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(0, -0.5, 0));
+				}
+				break;
+			case GLFW_KEY_LEFT:
+				if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(0.5, 0, 0));
+				}
+				break;
+			case GLFW_KEY_RIGHT:
+				if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(-0.5, 0, 0));
+				}
+				break;	
 		}
 	}
 }

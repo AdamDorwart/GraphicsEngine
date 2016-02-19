@@ -15,7 +15,9 @@ set(SOURCES
 	src/Util.cpp
 	src/Window.cpp
 	src/InputHandler.cpp
+	src/RenderPipeline.cpp
 	src/Shader.cpp
+	src/SceneGraph.cpp
 	src/Mesh.cpp
 	src/CoordFrame.cpp
 	src/SimpleShader.cpp)

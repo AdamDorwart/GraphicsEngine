@@ -2,10 +2,13 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 #include <unordered_map>
 #include <list>
 #include "Logger.h"
 #include "CoordFrame.h"
+
+using namespace glm;
 
 class InputListener;
 
@@ -23,14 +26,11 @@ class Window {
 
 		bool isActive();
 
-		void initFrame();
+		vec2 initFrame();
 
 		void finalizeFrame();
 
 		bool toggleFPS();
-
-		CoordFrame* getCoordFrame();
-		CoordFrame* setCoordFrame(CoordFrame* frame);
 
 		void subscribe(EventType event, InputListener* listener);
 		void unsubscribe(EventType event, InputListener* listener);
@@ -44,7 +44,6 @@ class Window {
 		int m_frames;
 		bool m_showFPS;
 		GLFWwindow* m_glfwWindow;
-		CoordFrame* m_coordFrame;
 
 		// List of subscribed listeners
 		std::list<InputListener*> m_inputListeners;

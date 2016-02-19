@@ -2,14 +2,17 @@
 #include <assert.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 #include "Logger.h"
 #include "Window.h"
 #include "InputHandler.h"
+#include "RenderPipeline.h"
 #include "SimpleShader.h"
 #include "Mesh.h"
 #include "CoordFrame.h"
 
+using namespace glm;
 
 void handleGLerror() {
 	GLenum err = GL_NO_ERROR;
@@ -55,8 +58,10 @@ int main(int argc, char *argv[]) {
 	InputHandler* inputHandler = new InputHandler();
 	window.subscribe(Window::INPUT_EVENT, inputHandler);
 
-	CoordFrame* frame = new CoordFrame();
-	window.setCoordFrame(frame);
+	RenderPipeline pipeline;
+
+	pipeline.init();
+	CoordFrame* frame = pipeline.getCoordFrame();
 
 	// 1.0472 rad = 60 deg FOV
 	frame->setPerspective(1.0472, width, height, 1.0, 1000.0);
@@ -65,44 +70,45 @@ int main(int argc, char *argv[]) {
 	vec3 up = vec3(0, 1, 0);
 	frame->setCamera(c, d, up);
 
-	Mesh meshA = Mesh();
-	meshA.parseOFF("testpatch.off");
+	SceneGraph* scene = new SceneGraph();
 
-	Mesh meshB = meshA;
+	Mesh* meshA = new Mesh();
+	meshA->parseOFF("testpatch.off");
+	meshA->pushEdgeCollapse(0,1);
+
+	Mesh* meshB = new Mesh();
 	//meshB.edgeCollapse(11,23);
-	meshB.edgeCollapse(0,1);
-	
-	SimpleShader shader = SimpleShader(frame);
-	shader.init();
+	meshB->parseOFF("testpatch.off");
+	meshB->pushEdgeCollapse(0,1);
+	meshB->popEdgeCollapse();
 
-	glEnable(GL_DEPTH_TEST);
-
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-	glFrontFace(GL_CW);
+	scene->addChild(meshA);
+	scene->addChild(meshB);
 
 	// Run until user closes the window
 	while (window.isActive()) {
-    	window.initFrame();
 
-  		shader.enable();
+		if (inputHandler->renderMeshA) {
+  			meshA->setVisible(true);
+  			meshB->setVisible(false);
 
-  		frame->resetWorldMatrix();
-
-  		if (inputHandler->renderMeshA) {
-  			meshA.render(frame);
+  			inputHandler->selectedObject = meshA->getRefFrame();
   		} else {
-  			meshB.render(frame);
+  			meshA->setVisible(false);
+  			meshB->setVisible(true);
+
+  			inputHandler->selectedObject = meshB->getRefFrame();
   		}
 
-  		//shader.disable();
+  		// Render next frame
+    	vec2 dim = window.initFrame();
 
-  		// Draw removed edge
-  		//meshA.renderEdge(0, 1);
+    	pipeline.render(dim, scene);
 
         window.finalizeFrame();
+        // Handle errors from rendering
+        handleGLerror();
 
-       	handleGLerror();
     }
 
     window.destroy();

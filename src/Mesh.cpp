@@ -4,16 +4,17 @@
 #include <algorithm>
 #include <fstream>
 
-#include <glm/gtx/string_cast.hpp>
-#include <glm/gtc/type_ptr.hpp>
+// For debugging
+//#include <glm/gtx/string_cast.hpp>
+//#include <glm/gtc/type_ptr.hpp>
 
 using namespace Util;
-
 
 Mesh::Mesh() {
 	
 }
 
+// Copy constructor
 Mesh::Mesh(const Mesh& m) {
 	indicies = m.indicies;
 	buffer = m.buffer;
@@ -23,6 +24,8 @@ Mesh::Mesh(const Mesh& m) {
 	vAdjs = m.vAdjs;
 	faces = m.faces;
 
+	collapseHistory = m.collapseHistory;
+
 	setupBuffers();
 }
 
@@ -30,17 +33,17 @@ Mesh::~Mesh() {
 	
 }
 
-void Mesh::render(CoordFrame* frame) {
+void Mesh::draw() {
 	glBindVertexArray(VAO);
 
-	glDrawElements(GL_TRIANGLES, indicies.size(), IndexTypeGL,(void*)0);
+	glDrawElements(GL_TRIANGLES, indicies.size(), IndexTypeGL, (void*)0);
 
 	glBindVertexArray(0);
 }
 
 
 // Debugging function - delete asap
-void Mesh::renderEdge(IndexType v1, IndexType v2) {
+void Mesh::drawEdge(IndexType v1, IndexType v2) {
  	Datum vec1 = buffer[v1];
 	Datum vec2 = buffer[v2];
 	vec1.c = {1.0, 0, 0};
@@ -69,7 +72,13 @@ void Mesh::renderEdge(IndexType v1, IndexType v2) {
 	glBindVertexArray(0);
 }
 
-bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
+bool Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
+	// These values are floats but shouldn't have any arthimetic being performed on them
+	// i.e: v = 1 or 0
+	// Check if these edges are elligible for collapse
+	if (!buffer[v1].v || !buffer[v2].v || v1 >= bufferSize || v2 >= bufferSize) {
+		return false;
+	}
 	VSet* v1Adj = &vAdjs[v1];
 	VSet* v2Adj = &vAdjs[v2];
 
@@ -94,11 +103,19 @@ bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
 	// New vertex index = end of buffer
 	IndexType vNindex = bufferSize++;
 
+	// Add edge collapse event to history
+	EdgeDelta delta;
+	delta.before[0] = v1;
+	delta.before[1] = v2;
+	delta.after = vNindex;
+	collapseHistory.push(delta);
+
 	// Add new vertex to vertex adjacency list
 	auto insertResult = vAdjs.emplace(vNindex, vN);
 	if (!insertResult.second) {
 		// Insert failed - Something bad happend
-		Logger::err("Unable to insert new vertex, index already exists. This shouldn't happen. Verify edgeCollapse algorithm.\n");
+		Logger::err("Unable to insert new vertex, index already exists. " 
+			        "This shouldn't happen. Verify edgeCollapse algorithm.\n");
 		return false;
 	}
 	
@@ -171,6 +188,39 @@ bool Mesh::edgeCollapse(IndexType v1, IndexType v2) {
 	// Upload the mesh data to the graphics driver
 	updateVBO();
 
+	return true;
+}
+
+bool Mesh::popEdgeCollapse() {
+	if (collapseHistory.size() == 0) {
+		return false;
+	}
+
+	EdgeDelta delta = collapseHistory.top();
+
+	// Set old verticies as visible
+	buffer[delta.before[0]].v = 1;
+	buffer[delta.before[1]].v = 1;
+	// Set collapsed verticies to invisible
+	buffer[delta.after].v = 0;
+	
+	// Iterate through the previous verticies
+	for (IndexType beforeInd : delta.before) {
+		// Iterate through this previous verticies face adjacencies
+		for (IndexType faceInd : vAdjs[beforeInd]) {
+			for (int i = 0; i < 3; i++) {
+				if (faces[faceInd].v[i] == delta.after) {
+					faces[faceInd].v[i] = beforeInd;
+					indicies[3*faceInd+i] = beforeInd;
+					break;
+				}
+			}
+		}
+	}
+	
+	// Upload the mesh data to the graphics driver
+	updateVBO();
+	collapseHistory.pop();
 	return true;
 }
 

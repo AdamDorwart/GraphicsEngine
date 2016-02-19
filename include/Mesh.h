@@ -5,11 +5,12 @@
 #include <unordered_map>
 #include <array>
 #include <vector>
+#include <stack>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <limits>
-#include "CoordFrame.h"
+#include "SceneGraph.h"
 
 #ifndef MODEL_PATH
 #define MODEL_PATH "../media/"
@@ -17,7 +18,7 @@
 
 using namespace glm;
 
-/* A Mesh is a type of object that contains a graph of vertices comprimising
+/* A Mesh is a type of object that contains a graph of vertices comprising of
  * triangle faces that describe a 3D geometry that can be rendered by
  * the OpenGL pipeline. It also defines various operations that can be performed
  * on itself like edge collapsing for mesh decimation.
@@ -25,14 +26,18 @@ using namespace glm;
 
 // Max # Verticies/Faces == # of positive numbers representable by IndexType
 using IndexType = unsigned int; // Must use a default number type
-static const GLenum IndexTypeGL = GL_UNSIGNED_INT; // This must match
+static const GLenum IndexTypeGL = GL_UNSIGNED_INT; // This must match IndexType
 static const IndexType NULL_INDEX = std::numeric_limits<IndexType>::max();
 
+using VSet = std::set<IndexType>;
 struct Triangle {
 	std::array<IndexType,3> v; // Vertice indexes
 	std::array<IndexType,3> f; // Shares edges with
 };
-using VSet = std::set<IndexType>;
+struct EdgeDelta {
+	std::array<IndexType,2> before;
+	IndexType after;
+};
 
 struct Datum {
 	vec3 p;  // Position
@@ -41,7 +46,7 @@ struct Datum {
 	float v; // Visibility
 };
 
-class Mesh {
+class Mesh : public SceneNode {
 	protected:
 		//Storage vectors
 		std::vector<IndexType> indicies;
@@ -55,6 +60,8 @@ class Mesh {
 
 		std::unordered_map<IndexType, VSet> vAdjs; // Vertex-Face Adj list
 		std::unordered_map<IndexType, Triangle> faces; // Indexed Face list
+
+		std::stack<EdgeDelta> collapseHistory;
 	public:
 		// Buffer IDs
 		enum { DATA_BUFFER = 0, INDEX_BUFFER, NUM_OF_BUFFERS};
@@ -65,12 +72,13 @@ class Mesh {
 		Mesh(const Mesh& m);
 		~Mesh();
 
-		void render(CoordFrame* frame);
-		void renderEdge(IndexType v1, IndexType v2);
+		virtual void draw();
+		void drawEdge(IndexType v1, IndexType v2);
 
 		bool parseOFF(const char* filename);
 
-		bool edgeCollapse(IndexType v1, IndexType v2);
+		bool pushEdgeCollapse(IndexType v1, IndexType v2);
+		bool popEdgeCollapse();
 
 		void createVertexNormals();
 

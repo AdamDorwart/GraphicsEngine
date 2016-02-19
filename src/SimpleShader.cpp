@@ -2,13 +2,12 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "Logger.h"
 
-SimpleShader::SimpleShader(CoordFrame* _frame) {
-	m_frame = _frame;
-	m_frame->subscribe(this);
+SimpleShader::SimpleShader() {
+
 }
 
 SimpleShader::~SimpleShader() {
-	m_frame->unsubscribe(this);
+
 }
 
 bool SimpleShader::init() {
@@ -41,11 +40,6 @@ bool SimpleShader::init() {
 	m_WorldLocation = getUniformLocation("gWorld");
 
 	return true;
-}
-
-void SimpleShader::consume(CoordFrame* frame) {
-	setWVP(frame->getPCW());
-	setW(frame->getW());
 }
 
 void SimpleShader::setWVP(mat4 WVP) {

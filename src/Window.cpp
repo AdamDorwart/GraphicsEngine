@@ -10,14 +10,12 @@ Window::Window() {
 	m_lastTime = glfwGetTime();
 	m_frames = 0;
 	m_showFPS = false;
-	m_coordFrame = NULL;
 }
 
 Window::Window(int width, int height, const char* title) {
 	m_lastTime = glfwGetTime();
 	m_frames = 0;
 	m_showFPS = false;
-	m_coordFrame = NULL;
 	initialize(width, height, title);
 }
 
@@ -114,7 +112,7 @@ bool Window::toggleFPS() {
 	return m_showFPS = !m_showFPS;
 }
 
-void Window::initFrame() {
+vec2 Window::initFrame() {
 	int width, height;
 	// Make this windows OpenGL context active
 	glfwMakeContextCurrent(m_glfwWindow);
@@ -122,9 +120,6 @@ void Window::initFrame() {
 	// Get framebuffer size and set the viewport
 	glfwGetFramebufferSize(m_glfwWindow, &width, &height);
     glViewport(0, 0, width, height);
-    if (m_coordFrame != NULL) {
-    	m_coordFrame->setViewport(0, 0, width, height);
-    }
 
 	if (m_showFPS) {
 		updateFPS();
@@ -132,6 +127,8 @@ void Window::initFrame() {
 	
 	// wipe the drawing surface clear
   	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  	return vec2(width, height);
 }
 
 void Window::finalizeFrame() {
@@ -150,16 +147,6 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
 	for (auto listener : activeWindows[window]->m_inputListeners) {
 		listener->consume(activeWindows[window], key, scancode, action, mods);
 	}
-}
-
-CoordFrame* Window::getCoordFrame() {
-	return m_coordFrame;
-}
-
-CoordFrame* Window::setCoordFrame(CoordFrame* newCoordFrame) {
-	CoordFrame* oldFrame = m_coordFrame;
-	m_coordFrame = newCoordFrame;
-	return oldFrame;
 }
 
 void Window::subscribe(EventType event, InputListener* listener) {
