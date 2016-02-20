@@ -61,6 +61,7 @@ class Mesh : public SceneNode {
 		unsigned int dataBufferMaxSize;
 		unsigned int indexBufferMaxSize;
 
+		// TODO these are just vectors...??
 		std::unordered_map<IndexType, VSet> vAdjs; // Vertex-Face Adj list
 		std::unordered_map<IndexType, Triangle> faces; // Indexed Face list
 

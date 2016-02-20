@@ -224,6 +224,76 @@ bool Mesh::popEdgeCollapse() {
 	return true;
 }
 
+void Mesh::initializeQuadricError() {
+	struct ValidPair {
+		float error;
+		IndexType v0;
+		IndexType v1;
+	};
+	std::priority_queue<ValidPair> vertexErrors;
+	std::vector<mat4> faceK;
+
+	// Find the fundamental error quadric of every face
+	for (auto face : faces) {
+		IndexType& i = face.first;
+		Triangle& t = face.second;
+		vec3 v0 = buffer[t.v[0]].p;
+		vec3 ab = buffer[t.v[1]].p - v0;
+		vec3 ac = buffer[t.v[2]].p - v0;
+		vec3 norm = cross(ab, ac);
+		float d = -dot(norm, v0);
+		vec4 p = transpose(vec4(norm.x, norm.y, norm.z, d));
+		mat4 K = p*transpose(p);
+
+		faceK[i] = K;
+	}
+
+	// Compute initial Q for each vertex
+	std::vector<mat4> vertexQ;
+	for (auto vertex : vAdjs) {
+		IndexType& i = vertex.first;
+		VSet& faces = vertex.second;
+		mat4 Q = mat4(0);
+		for (auto face : faces) {
+			Q = Q + faceErrors[face];
+		}
+		vertexQ[i] = Q;
+	}
+
+	// Find all Valid Pairs
+	using ValidPairs = std::set<IndexType>;
+	std::unordered_map<ValidPairs, ???> vp;
+	// Fuck this part of code
+	for (auto vertex : vAdjs) {
+		IndexType& i = vertex.first;
+		VSet& faces = vertex.second;
+		for (IndexType face_i : faces) {
+			for (auto pair : faces[face_i].v) {
+				ValidPairs newVP = std::set();
+				newVP.insert(vertex);
+				newVP.insert(pair);
+				vp[newVP] = ???;
+			}
+		}
+		// Iterate through every other vertex
+		for (otherVertex ...) {
+			if (length(buffer[i].p - otherVertex.p) < threshold) {
+				ValidPairs newVP = std::set();
+				newVP.insert(vertex);
+				newVP.insert(otherVertex);
+				vp[newVP] = ???;
+			}
+		}
+	}
+
+	// Compute quadric errors for contractrions and add to heap
+	for (auto pair : vp) {
+		vec4 vCollapse = collapseVertex(pair);
+		float error = transpose(vCollapse)*(vertexQ[pair[0]] + vertexQ[pair[1]])*vCollapse;
+		vertexErrors.insert( {error, pair});
+	}
+}
+
 void Mesh::createVertexNormals() {
 	std::vector<vec3> faceNormals;
 	faceNormals.resize(faces.size());
@@ -322,7 +392,7 @@ bool Mesh::parseOFF(const char* filename) {
 	xmax = ymax = zmax = std::numeric_limits<double>::min();
 
 	if (!infile.is_open() || infile.bad() || !infile.good() || infile.fail()) {
-		Logger::err("Error opening file [%s]", (std::string(MODEL_PATH) + filename).c_str());
+		Logger::err("Error opening file [%s]\n", (std::string(MODEL_PATH) + filename).c_str());
 		return false;
 	}
 

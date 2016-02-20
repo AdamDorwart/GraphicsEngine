@@ -48,6 +48,10 @@ void handleGLerror() {
 
 int main(int argc, char *argv[]) {
 	assert(Logger::start());
+	if (argc != 2) {
+		Logger::err("Error: No mesh file provided.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	int width = 2560;
 	int height = 1440;
@@ -67,12 +71,18 @@ int main(int argc, char *argv[]) {
 
 	// Setup mesh
 	Mesh* meshA = new Mesh();
-	meshA->parseOFF(argv[1]);
+	if (!meshA->parseOFF(argv[1])) {
+		Logger::err("Error: Unable to continue without mesh.\n");
+		exit(EXIT_FAILURE);
+	}
 	meshA->pushEdgeCollapse(0,1);
 
 	Mesh* meshB = new Mesh();
 	//meshB.edgeCollapse(11,23);
-	meshB->parseOFF(argv[1]);
+	if (!meshB->parseOFF(argv[1])) {
+		Logger::err("Error: Unable to continue without mesh.\n");
+		exit(EXIT_FAILURE);
+	}
 	meshB->pushEdgeCollapse(0,1);
 	meshB->popEdgeCollapse();
 
@@ -84,9 +94,9 @@ int main(int argc, char *argv[]) {
 	scene->addChild(transform);
 	mat4* refFrame = inputHandler->selectedObject = transform->getRefFrame();
 
-	// Setup Coordinate Frame
+	// Setup view
 	CoordFrame* frame = pipeline.getCoordFrame();
-	
+
 	// 1.0472 rad = 60 deg FOV
 	double fov = 1.0472;
 	double nearPlane = 0.001;
