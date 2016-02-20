@@ -53,6 +53,9 @@ class Mesh : public SceneNode {
 		std::vector<Datum> buffer;
 		IndexType bufferSize;
 
+		double maxWidth, maxHeight, maxDepth;
+		vec3 center;
+
 		unsigned int VAO;
 		unsigned int bufferIds[2];
 		unsigned int dataBufferMaxSize;
@@ -81,6 +84,11 @@ class Mesh : public SceneNode {
 		bool popEdgeCollapse();
 
 		void createVertexNormals();
+
+		double getMaxWidth();
+		double getMaxHeight();
+		double getMaxDepth();
+		vec3 getCenter();
 
 		void setupBuffers();
 

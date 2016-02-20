@@ -99,8 +99,11 @@ void Window::initialize(int width, int height, const char* title) {
 	// VSync 1 = enable, 0 = disable
 	glfwSwapInterval(0);
 
-	// Set input callback
+	// Set input callbacks
 	glfwSetKeyCallback(m_glfwWindow, Window::keyCallback);
+	glfwSetCursorPosCallback(m_glfwWindow, Window::mousePositionCallback);
+	glfwSetMouseButtonCallback(m_glfwWindow, Window::mouseButtonCallback);
+	glfwSetScrollCallback(m_glfwWindow, Window::mouseScrollCallback);
 
 }
 
@@ -144,23 +147,59 @@ void Window::errorCallback(int error, const char* description) {
 }
 
 void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	for (auto listener : activeWindows[window]->m_inputListeners) {
-		listener->consume(activeWindows[window], key, scancode, action, mods);
+	for (auto listener : activeWindows[window]->m_keyInputListeners) {
+		listener->consumeKey(activeWindows[window], key, scancode, action, mods);
+	}
+}
+
+void Window::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+	for (auto listener : activeWindows[window]->m_mouseButtonListeners) {
+		listener->consumeMouseBtn(activeWindows[window], button, action, mods);
+	}
+}
+
+void Window::mousePositionCallback(GLFWwindow* window, double xpos, double ypos) {
+	for (auto listener : activeWindows[window]->m_mousePositionListeners) {
+		listener->consumeMousePos(activeWindows[window], xpos, ypos);
+	}
+}
+
+void Window::mouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+	for (auto listener : activeWindows[window]->m_mouseScrollListeners) {
+		listener->consumeMouseScroll(activeWindows[window], xoffset, yoffset);
 	}
 }
 
 void Window::subscribe(EventType event, InputListener* listener) {
 	switch (event) {
-		case INPUT_EVENT:
-			m_inputListeners.push_back(listener);
+		case KEY_INPUT_EVENT:
+			m_keyInputListeners.push_back(listener);
+			break;
+		case MOUSE_BTN_EVENT:
+			m_mouseButtonListeners.push_back(listener);
+			break;
+		case MOUSE_POS_EVENT:
+			m_mousePositionListeners.push_back(listener);
+			break;
+		case MOUSE_SCROLL_EVENT:
+			m_mouseScrollListeners.push_back(listener);
 			break;
 	}
 }
 
 void Window::unsubscribe(EventType event, InputListener* listener) {
 	switch (event) {
-		case INPUT_EVENT:
-			m_inputListeners.remove(listener);
+		case KEY_INPUT_EVENT:
+			m_keyInputListeners.remove(listener);
+			break;
+		case MOUSE_BTN_EVENT:
+			m_mouseButtonListeners.remove(listener);
+			break;
+		case MOUSE_POS_EVENT:
+			m_mousePositionListeners.remove(listener);
+			break;
+		case MOUSE_SCROLL_EVENT:
+			m_mouseScrollListeners.remove(listener);
 			break;
 	}
 }

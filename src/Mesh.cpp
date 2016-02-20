@@ -316,6 +316,11 @@ bool Mesh::parseOFF(const char* filename) {
 	IndexType face_i = 0;
 	bufferSize = 0;
 
+	double xmin, xmax, ymin, ymax, zmin, zmax;
+
+	xmin = ymin = zmin = std::numeric_limits<double>::max();
+	xmax = ymax = zmax = std::numeric_limits<double>::min();
+
 	if (!infile.is_open() || infile.bad() || !infile.good() || infile.fail()) {
 		Logger::err("Error opening file [%s]", (std::string(MODEL_PATH) + filename).c_str());
 		return false;
@@ -360,6 +365,13 @@ bool Mesh::parseOFF(const char* filename) {
 			d.p.y = std::stof(tokens.at(1));
 			d.p.z = std::stof(tokens.at(2));
 
+			xmin = (d.p.x < xmin) ? (d.p.x) : (xmin);
+			xmax = (d.p.x > xmax) ? (d.p.x) : (xmax);
+			ymin = (d.p.y < ymin) ? (d.p.y) : (ymin);
+			ymax = (d.p.y > ymax) ? (d.p.y) : (ymax);
+			zmin = (d.p.z < zmin) ? (d.p.z) : (zmin);
+			zmax = (d.p.z > zmax) ? (d.p.z) : (zmax);
+
 			d.c.x = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 			d.c.y = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 			d.c.z = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
@@ -394,6 +406,13 @@ bool Mesh::parseOFF(const char* filename) {
 			faces[face_i++] = t;
 		}
     }
+
+    maxWidth = abs(xmax - xmin);
+    maxHeight = abs(ymax - ymin);
+    maxDepth = abs(zmax - zmin);
+    center = vec3((xmin + xmax) / 2.0,
+    			  (ymin + ymax) / 2.0,
+    			  (zmin + zmax) / 2.0);
 
     // Create Face Adjaceny in Indexed Face list
 	for (auto face : faces) {
@@ -440,4 +459,20 @@ bool Mesh::parseOFF(const char* filename) {
     setupBuffers();
     createVertexNormals();
     return true;
+}
+
+double Mesh::getMaxWidth() {
+	return maxWidth;
+}
+
+double Mesh::getMaxHeight() {
+	return maxHeight;
+}
+
+double Mesh::getMaxDepth() {
+	return maxDepth;
+}
+
+vec3 Mesh::getCenter() {
+	return center;
 }

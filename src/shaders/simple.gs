@@ -30,9 +30,9 @@ void main() {
 		EmitVertex();
 
 		gl_Position = gl_in[2].gl_Position;
-		Color = gs_in[1].Color;
-		Normal = gs_in[1].Normal;
-		WorldPos = gs_in[1].WorldPos;
+		Color = gs_in[2].Color;
+		Normal = gs_in[2].Normal;
+		WorldPos = gs_in[2].WorldPos;
 		EmitVertex();
 	}
 	EndPrimitive();

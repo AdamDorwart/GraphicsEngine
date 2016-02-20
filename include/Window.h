@@ -14,7 +14,7 @@ class InputListener;
 
 class Window {
 	public:
-		enum EventType {INPUT_EVENT};
+		enum EventType {KEY_INPUT_EVENT, MOUSE_BTN_EVENT, MOUSE_POS_EVENT, MOUSE_SCROLL_EVENT};
 
 		Window();
 		Window(int width, int height, const char* title);
@@ -46,15 +46,20 @@ class Window {
 		GLFWwindow* m_glfwWindow;
 
 		// List of subscribed listeners
-		std::list<InputListener*> m_inputListeners;
+		std::list<InputListener*> m_keyInputListeners;
+		std::list<InputListener*> m_mouseButtonListeners;
+		std::list<InputListener*> m_mousePositionListeners;
+		std::list<InputListener*> m_mouseScrollListeners;
 
 	// Statics
 	private:
 		static void initGLFW();
 
 		static void errorCallback(int error, const char* description);
-
 		static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+		static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+		static void mousePositionCallback(GLFWwindow* window, double xpos, double ypos);
+		static void mouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
 		static std::unordered_map<GLFWwindow*, Window*> activeWindows;
 		static bool isGlfwInit;
@@ -62,5 +67,8 @@ class Window {
 
 class InputListener {
 	public:
-		virtual void consume(Window* window, int key, int scancode, int action, int mods) = 0;
+		virtual void consumeKey(Window* window, int key, int scancode, int action, int mods) = 0;
+		virtual void consumeMouseBtn(Window* window, int button, int action, int mods) = 0;
+		virtual void consumeMousePos(Window* window, double xpos, double ypos) = 0;
+		virtual void consumeMouseScroll(Window* window, double xoffset, double yoffset) = 0;
 };
