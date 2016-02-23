@@ -75,7 +75,8 @@ int main(int argc, char *argv[]) {
 		Logger::err("Error: Unable to continue without mesh.\n");
 		exit(EXIT_FAILURE);
 	}
-	meshA->pushEdgeCollapse(0,1);
+	inputHandler->selectedMesh = meshA;
+	//meshA->pushEdgeCollapse(0,1);
 
 	Mesh* meshB = new Mesh();
 	//meshB.edgeCollapse(11,23);
@@ -83,8 +84,8 @@ int main(int argc, char *argv[]) {
 		Logger::err("Error: Unable to continue without mesh.\n");
 		exit(EXIT_FAILURE);
 	}
-	meshB->pushEdgeCollapse(0,1);
-	meshB->popEdgeCollapse();
+	//meshB->pushEdgeCollapse(0,1);
+	//meshB->popEdgeCollapse();
 
 	SceneNode* transform = new SceneNode();
 

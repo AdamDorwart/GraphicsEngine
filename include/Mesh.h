@@ -11,6 +11,7 @@
 #include <glm/glm.hpp>
 #include <limits>
 #include "SceneGraph.h"
+#include <cfloat>
 
 #ifndef MODEL_PATH
 #define MODEL_PATH "../media/"
@@ -39,6 +40,28 @@ struct EdgeDelta {
 	IndexType after;
 };
 
+struct ValidPairError {
+	float error;
+	std::array<IndexType,2> v;
+	inline bool operator<(const ValidPairError& rhs) const {
+		if (error == rhs.error) {
+			return std::lexicographical_compare(v.begin(),v.end(),
+        								   		rhs.v.begin(),rhs.v.end());
+		} else {
+			return error < rhs.error;
+		}
+	}
+};
+
+using VPEheap = std::set<ValidPairError>;
+
+struct VPEheapItComp {
+	bool operator() (const VPEheap::iterator& lhs, const VPEheap::iterator& rhs) const {
+      	return &(*lhs) < &(*rhs);
+    }
+};
+
+
 struct Datum {
 	vec3 p;  // Position
 	vec3 n;  // Normal
@@ -64,8 +87,20 @@ class Mesh : public SceneNode {
 		// TODO these are just vectors...??
 		std::unordered_map<IndexType, VSet> vAdjs; // Vertex-Face Adj list
 		std::unordered_map<IndexType, Triangle> faces; // Indexed Face list
+ 		// Links a vertex to all of it's member pairs in the VPEheap
+		std::vector<std::set<VPEheap::iterator, VPEheapItComp>> vpeLinks;
 
 		std::stack<EdgeDelta> collapseHistory;
+		std::vector<mat4> vertexQ; // Q error matrix for each vertex
+		VPEheap vertexErrors; // Sorts the pairs by error
+
+		void printVPElinks(bool showV);
+		void printVPE(bool showError);
+
+		vec3 collapseVertices(IndexType v0, IndexType v1);
+		void initializeQuadricError(float threshold);
+		VPEheap::iterator insertVPE(IndexType v0, IndexType v1);
+
 	public:
 		// Buffer IDs
 		enum { DATA_BUFFER = 0, INDEX_BUFFER, NUM_OF_BUFFERS};
@@ -81,8 +116,9 @@ class Mesh : public SceneNode {
 
 		bool parseOFF(const char* filename);
 
-		bool pushEdgeCollapse(IndexType v1, IndexType v2);
+		IndexType pushEdgeCollapse(IndexType v1, IndexType v2);
 		bool popEdgeCollapse();
+		void quadricSimplifyStep();
 
 		void createVertexNormals();
 
@@ -94,5 +130,7 @@ class Mesh : public SceneNode {
 		void setupBuffers();
 
 		void updateVBO();
+
+		IndexType getNumberVerticies();
 
 };

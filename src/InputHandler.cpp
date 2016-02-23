@@ -10,6 +10,7 @@ InputHandler::InputHandler(int _width, int _height) {
 	lastMX = lastMY = 0;
 	width = _width;
 	height = _height;
+	selectedMesh = NULL;
 }
 
 InputHandler::~InputHandler() {
@@ -90,7 +91,24 @@ void InputHandler::consumeKey(Window* window, int key, int scancode, int action,
 				if (selectedObject != NULL) {
 					*selectedObject = translate(*selectedObject, vec3(-0.5, 0, 0));
 				}
-				break;	
+				break;
+		}
+	}
+	if (action == GLFW_REPEAT) {
+		switch (key) {
+			case GLFW_KEY_Q:
+				if (selectedMesh != NULL) {
+					unsigned int size = selectedMesh->getNumberVerticies();
+					for (int i = 0; i < size/500+1; i++) {
+						selectedMesh->quadricSimplifyStep();
+					}
+				}
+				break;
+			case GLFW_KEY_P:
+				if (selectedMesh != NULL) {
+					selectedMesh->popEdgeCollapse();
+				}
+				break;
 		}
 	}
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include "Window.h"
+#include "Mesh.h"
 
 class InputHandler : public InputListener {
 	public:
@@ -8,6 +9,8 @@ class InputHandler : public InputListener {
 		bool renderMeshA;
 	
 		mat4* selectedObject;
+
+		Mesh* selectedMesh;
 
 		bool leftMousePressed;
 		int lastMX, lastMY;

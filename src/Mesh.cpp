@@ -3,9 +3,12 @@
 #include "Util.h"
 #include <algorithm>
 #include <fstream>
+#include <unordered_set>
+#include <glm/gtc/matrix_transform.hpp>
+
 
 // For debugging
-//#include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/string_cast.hpp>
 //#include <glm/gtc/type_ptr.hpp>
 
 using namespace Util;
@@ -72,12 +75,13 @@ void Mesh::drawEdge(IndexType v1, IndexType v2) {
 	glBindVertexArray(0);
 }
 
-bool Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
+IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
 	// These values are floats but shouldn't have any arthimetic being performed on them
 	// i.e: v = 1 or 0
 	// Check if these edges are elligible for collapse
-	if (!buffer[v1].v || !buffer[v2].v || v1 >= bufferSize || v2 >= bufferSize) {
-		return false;
+	if (!buffer[v1].v || !buffer[v2].v || v1 >= 2*bufferSize || v2 >= 2*bufferSize) {
+		Logger::err("Verticies are unelligble for collapse\n");
+		return NULL_INDEX;
 	}
 	VSet* v1Adj = &vAdjs[v1];
 	VSet* v2Adj = &vAdjs[v2];
@@ -116,12 +120,12 @@ bool Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
 		// Insert failed - Something bad happend
 		Logger::err("Unable to insert new vertex, index already exists. " 
 			        "This shouldn't happen. Verify edgeCollapse algorithm.\n");
-		return false;
+		return NULL_INDEX;
 	}
 	
 	// New vertex is the midpoint of it's predecessors
 	Datum newData;
-	newData.p = (buffer[v1].p + buffer[v2].p)/2.0f;
+	newData.p = collapseVertices(v1, v2);
 	newData.n = (buffer[v1].n + buffer[v2].n)/2.0f;
 	newData.c = (buffer[v1].c + buffer[v2].c)/2.0f;
 	newData.v = 1;
@@ -188,7 +192,7 @@ bool Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
 	// Upload the mesh data to the graphics driver
 	updateVBO();
 
-	return true;
+	return vNindex;
 }
 
 bool Mesh::popEdgeCollapse() {
@@ -224,74 +228,264 @@ bool Mesh::popEdgeCollapse() {
 	return true;
 }
 
-void Mesh::initializeQuadricError() {
-	struct ValidPair {
-		float error;
-		IndexType v0;
-		IndexType v1;
-	};
-	std::priority_queue<ValidPair> vertexErrors;
-	std::vector<mat4> faceK;
+void Mesh::initializeQuadricError(float threshold) {
+	
+	std::vector<mat4> faceK(faces.size()); // Each face consists of 3 verticies
+	vertexQ.resize(2*bufferSize);
+	vpeLinks.resize(2*bufferSize);
 
+	//Logger::info("Calculating face errors\n");
 	// Find the fundamental error quadric of every face
 	for (auto face : faces) {
-		IndexType& i = face.first;
+		IndexType i = face.first;
 		Triangle& t = face.second;
 		vec3 v0 = buffer[t.v[0]].p;
 		vec3 ab = buffer[t.v[1]].p - v0;
 		vec3 ac = buffer[t.v[2]].p - v0;
 		vec3 norm = cross(ab, ac);
 		float d = -dot(norm, v0);
-		vec4 p = transpose(vec4(norm.x, norm.y, norm.z, d));
-		mat4 K = p*transpose(p);
+		vec4 p = vec4(norm.x, norm.y, norm.z, d);
+		mat4 K = outerProduct(p, p);
 
 		faceK[i] = K;
+		//Logger::info("Facek[%d]= %s\n",i,to_string(K).c_str());
 	}
 
+	//Logger::info("Computing Vertex Q's\n");
 	// Compute initial Q for each vertex
-	std::vector<mat4> vertexQ;
 	for (auto vertex : vAdjs) {
-		IndexType& i = vertex.first;
+		IndexType i = vertex.first;
 		VSet& faces = vertex.second;
 		mat4 Q = mat4(0);
 		for (auto face : faces) {
-			Q = Q + faceErrors[face];
+			Q = Q + faceK[face];
 		}
 		vertexQ[i] = Q;
+		//Logger::info("VertexQ[%d]= %s\n",i,to_string(Q).c_str());
 	}
 
+	//Logger::info("Finding all valid pairs.\n");
 	// Find all Valid Pairs
 	using ValidPairs = std::set<IndexType>;
-	std::unordered_map<ValidPairs, ???> vp;
-	// Fuck this part of code
+	// Combine hashes into a new unique hash - Thanks Boost
+	struct ValidPairsHasher {
+	    size_t operator()(const ValidPairs& v) const {
+	        std::hash<IndexType> hasher;
+	        size_t seed = 0;
+	        for (IndexType i : v) {
+	            seed ^= hasher(i) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+	        }
+	        return seed;
+	    }
+	};
+	std::unordered_set<ValidPairs, ValidPairsHasher> vp;
 	for (auto vertex : vAdjs) {
-		IndexType& i = vertex.first;
-		VSet& faces = vertex.second;
-		for (IndexType face_i : faces) {
-			for (auto pair : faces[face_i].v) {
-				ValidPairs newVP = std::set();
-				newVP.insert(vertex);
-				newVP.insert(pair);
-				vp[newVP] = ???;
+		IndexType i = vertex.first;
+		VSet& adjFaces = vertex.second;
+		//Logger::info("Finding edge pairs for %d\n",i);
+		// Add valid pairs that share an existing edge
+		for (IndexType face_i : adjFaces) {
+			for (auto pair_i : faces[face_i].v) {
+				if (i != pair_i) {
+					ValidPairs newVP = ValidPairs();
+					newVP.insert(i);
+					newVP.insert(pair_i);
+					auto result = vp.insert(newVP);
+					// DEBUGGING
+					/*
+					if (result.second) {
+						int i = 0;
+						IndexType v[2];
+						for (auto vertex : *(result.first)) {
+							v[i++] = vertex;
+						}
+						//Logger::info("New VP: (%d,%d)\n", v[0], v[1]);
+					}*/
+				}
 			}
 		}
+		//Logger::info("Finding distance pairs for %d\n",i);
+		// Add valid pairs of vertices that are within threshold distance
+		// to each other
 		// Iterate through every other vertex
-		for (otherVertex ...) {
-			if (length(buffer[i].p - otherVertex.p) < threshold) {
-				ValidPairs newVP = std::set();
-				newVP.insert(vertex);
-				newVP.insert(otherVertex);
-				vp[newVP] = ???;
+		// This makes quadratic load time
+		/*
+		for (auto otherVertex : vAdjs) {
+			IndexType j = otherVertex.first;
+			if (length(buffer[i].p - buffer[i].p) < threshold) {
+				if (i != j) {
+					ValidPairs newVP = ValidPairs();
+					newVP.insert(i);
+					newVP.insert(j);
+					auto result = vp.insert(newVP);
+					// DEBUGGING
+					if (result.second) {
+						int i = 0;
+						IndexType v[2];
+						for (auto vertex : *(result.first)) {
+							v[i++] = vertex;
+						}
+						//Logger::info("New VP: (%d,%d)\n", v[0], v[1]);
+					}
+				}
 			}
+		}
+		*/
+	}
+
+	//Logger::info("Starting VPE creation.\n");
+	// Compute quadric errors for contractrions and add to heap
+	for (auto pair : vp) {
+		int i = 0;
+		IndexType v[2];
+		for (auto vertex : pair) {
+			v[i++] = vertex;
+		}
+
+		VPEheap::iterator it = insertVPE(v[0], v[1]);
+
+		// Add a link to the VPE for both verticies
+		vpeLinks[v[0]].insert(it);
+		vpeLinks[v[1]].insert(it);
+	}
+}
+
+VPEheap::iterator Mesh::insertVPE(IndexType v0, IndexType v1) {
+	// Collapse the valid pairs
+	vec4 vCollapse = vec4(collapseVertices(v0,v1), 1.0);
+
+	// Compute the error of their collapse
+	ValidPairError vpe;
+	// error = v.T*(K_0 + K_1)*v
+	vpe.error = dot(vCollapse*(vertexQ[v0] + vertexQ[v1]),vCollapse);
+	vpe.v[0] = v0;
+	vpe.v[1] = v1;
+
+	//Logger::info("Adding VPE: (%d,%d,%f)\n",vpe.v[0], vpe.v[1], vpe.error);
+
+	// Insert the Valid Pair Error into the heap
+	auto insertResult = vertexErrors.insert(vpe);
+	if (!insertResult.second) {
+		//Logger::info("Duplicate VPE insert (%d,%d)\n",v0, v1);
+	}
+	return insertResult.first;
+}
+
+void Mesh::printVPElinks(bool showV) {
+	Logger::info("VPElinks state:\n");
+	for (IndexType i = 0; i < vpeLinks.size(); i++) {
+		if (vpeLinks[i].size() == 0) {
+			continue;
+		}
+		Logger::info("vpeLinks[%d] = {",i);
+		for (auto adjV : vpeLinks[i]) {
+			if (showV) {
+				Logger::info("{%d,%d,%d}",adjV->v[0],adjV->v[1],adjV);
+			} else {
+				Logger::info("{%d}",adjV);
+			}
+		}
+		Logger::info("}\n");
+	}
+}
+
+void Mesh::printVPE(bool showError) {
+	Logger::info("VPE :{");
+	for (auto pair : vertexErrors) {
+		if (showError) {
+			Logger::info("{%d,%d,e=%f}",pair.v[0],pair.v[1],pair.error);
+		} else {
+			Logger::info("{%d,%d}",pair.v[0],pair.v[1]);
+		}
+	}
+	Logger::info("}\n");
+}
+
+void Mesh::quadricSimplifyStep() {
+	//printVPElinks(true);
+	//printVPE(false);
+	
+	// Get the minnimum VPE from the heap
+	auto it = vertexErrors.begin();
+	
+	// Collapse the edge
+	IndexType newV = pushEdgeCollapse(it->v[0], it->v[1]);
+	if (newV == NULL_INDEX) {
+		Logger::err("Unable to collapse verticies (%d,%d)\n", it->v[0], it->v[1]);
+		return;
+	}
+
+	// Add new Q error
+	//Logger::info("Collapsing edge (%d,%d,err=%f->(%d)\n", it->v[0], it->v[1], it->error, newV);
+	vertexQ[newV] = vertexQ[it->v[0]] + vertexQ[it->v[1]];
+
+	std::vector<std::pair<IndexType,VPEheap::iterator>> toRemove;
+	std::vector<std::pair<IndexType,VPEheap::iterator>> toAdd;
+
+	for (IndexType vp : it->v) {
+		for (VPEheap::iterator vpeIt : vpeLinks[vp]) {
+			ValidPairError vpe = ValidPairError(*(vpeIt));
+			if (vpe.v[0] == it->v[0] && vpe.v[1] == it->v[1]) {
+				toRemove.push_back(std::make_pair(vp, vpeIt));
+				continue;
+			}
+			IndexType v;
+			if (vpe.v[0] == vp) {
+				v = vpe.v[1];
+				// maintain order
+				if (v < newV) {
+					vpe.v[0] = v;
+					vpe.v[1] = newV;
+				} else {
+					vpe.v[0] = newV;
+				}
+			} else if (vpe.v[1] == vp) {
+				v = vpe.v[0];
+				if (v > newV) {
+					vpe.v[1] = v;
+					vpe.v[0] = newV;
+				} else {
+					vpe.v[1] = newV;
+				}
+			}
+
+			// Remove the old VPE, add the updated one, update the iterator
+			vertexErrors.erase(vpeIt);
+
+			VPEheap::iterator it = insertVPE(vpe.v[0], vpe.v[1]);
+
+			toRemove.push_back(std::make_pair(vp, vpeIt));
+			toRemove.push_back(std::make_pair(v, vpeIt));
+			toAdd.push_back(std::make_pair(vp, it));
+			toAdd.push_back(std::make_pair(v, it));
+			toAdd.push_back(std::make_pair(newV, it));
 		}
 	}
 
-	// Compute quadric errors for contractrions and add to heap
-	for (auto pair : vp) {
-		vec4 vCollapse = collapseVertex(pair);
-		float error = transpose(vCollapse)*(vertexQ[pair[0]] + vertexQ[pair[1]])*vCollapse;
-		vertexErrors.insert( {error, pair});
+	//Remove the vpeLinks
+	for (auto vpeLinkRm : toRemove) {
+		auto result = vpeLinks[vpeLinkRm.first].erase(vpeLinkRm.second);
+		if (result) {
+			//printVPElinks(true);
+			//Logger::info("Removing vpeLink[%d]: (%d,%d,%d)\n",vpeLinkRm.first,vpeLinkRm.second->v[0],vpeLinkRm.second->v[1],vpeLinkRm.second);
+		}
 	}
+	// Add the new ones
+	for (auto vpeLinkAdd : toAdd) {
+		auto result = vpeLinks[vpeLinkAdd.first].insert(vpeLinkAdd.second);
+		if (result.second) {
+			//printVPElinks(true);
+			//Logger::info("Adding vpeLink[%d]: (%d,%d,%d)\n",vpeLinkAdd.first,vpeLinkAdd.second->v[0],vpeLinkAdd.second->v[1],vpeLinkAdd.second);
+		}
+	}
+
+	// Remove the collapsed pair
+	//Logger::info("Removing main VPE: (%d,%d,%f)\n",it->v[0], it->v[1], it->error);
+	vertexErrors.erase(it);
+}
+
+vec3 Mesh::collapseVertices(IndexType v0, IndexType v1) {
+	return (buffer[v0].p + buffer[v1].p)/2.0f;
 }
 
 void Mesh::createVertexNormals() {
@@ -528,6 +722,7 @@ bool Mesh::parseOFF(const char* filename) {
 
     setupBuffers();
     createVertexNormals();
+    initializeQuadricError(0.15);
     return true;
 }
 
@@ -545,4 +740,8 @@ double Mesh::getMaxDepth() {
 
 vec3 Mesh::getCenter() {
 	return center;
+}
+
+IndexType Mesh::getNumberVerticies() {
+	return bufferSize;
 }
