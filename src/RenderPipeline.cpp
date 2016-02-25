@@ -1,19 +1,22 @@
 #include "RenderPipeline.h"
 
 RenderPipeline::RenderPipeline() {
-	m_shader = new SimpleShader();
+	m_flatShader = new FlatShader();
+	m_normalShader = new NormalShader();
 	m_coordFrame = new CoordFrame();
 	m_coordFrame->subscribe(this);
 }
 
 RenderPipeline::~RenderPipeline() {
-	delete m_shader;
+	delete m_flatShader;
+	delete m_normalShader;
 	delete m_coordFrame;
 	m_coordFrame->unsubscribe(this);
 }
 
 bool RenderPipeline::init() {
-	m_shader->init();
+	m_flatShader->init();
+	m_normalShader->init();
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -27,20 +30,37 @@ bool RenderPipeline::init() {
 void RenderPipeline::render(vec2 dim, SceneGraph* scene) {
 	m_coordFrame->setViewport(0, 0, dim.x, dim.y);
 
-	m_shader->enable();
+	if (m_useFlatShading) {
+		m_flatShader->enable();
+	} else {
+		m_normalShader->enable();
+	}
 
 	m_coordFrame->resetWorldMatrix();
 
 	scene->traverse(m_coordFrame);
 
-	m_shader->disable();
+	if (m_useFlatShading) {
+		m_flatShader->disable();
+	} else {
+		m_normalShader->disable();
+	}
 }
 
 void RenderPipeline::consume(CoordFrame* frame) {
-	m_shader->setWVP(frame->getPCW());
-	m_shader->setW(frame->getW());
+	if (m_useFlatShading) {
+		m_flatShader->setWVP(frame->getPCW());
+		m_flatShader->setW(frame->getW());
+	} else {
+		m_normalShader->setWVP(frame->getPCW());
+		m_normalShader->setW(frame->getW());
+	}
 }
 
 CoordFrame* RenderPipeline::getCoordFrame() {
 	return m_coordFrame;
+}
+
+void RenderPipeline::setFlatShading(bool val) {
+	m_useFlatShading = val;
 }

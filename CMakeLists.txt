@@ -20,7 +20,8 @@ set(SOURCES
 	src/SceneGraph.cpp
 	src/Mesh.cpp
 	src/CoordFrame.cpp
-	src/SimpleShader.cpp)
+	src/FlatShader.cpp
+	src/NormalShader.cpp)
 
 set(CMAKE_CXX_FLAGS "-O3 -Wall -std=c++11")
 add_executable(program ${SOURCES})

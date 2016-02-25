@@ -2,14 +2,18 @@
 #include <glm/glm.hpp>
 #include "SceneGraph.h"
 #include "CoordFrame.h"
-#include "SimpleShader.h"
+#include "FlatShader.h"
+#include "NormalShader.h"
 
 using namespace glm;
 
 class RenderPipeline : public CoordFrameListener {
 	private:
-		SimpleShader* m_shader;
+		FlatShader* m_flatShader;
+		NormalShader* m_normalShader;
 		CoordFrame* m_coordFrame;
+
+		bool m_useFlatShading;
 	public:
 		RenderPipeline();
 		~RenderPipeline();
@@ -21,4 +25,6 @@ class RenderPipeline : public CoordFrameListener {
 		virtual void consume(CoordFrame* frame);
 
 		CoordFrame* getCoordFrame();
+
+		void setFlatShading(bool val);
 };

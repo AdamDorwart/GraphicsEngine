@@ -9,7 +9,6 @@
 #include "Window.h"
 #include "InputHandler.h"
 #include "RenderPipeline.h"
-#include "SimpleShader.h"
 #include "Mesh.h"
 #include "CoordFrame.h"
 
@@ -55,6 +54,7 @@ int main(int argc, char *argv[]) {
 
 	int width = 2560;
 	int height = 1440;
+
 	// Setup Window
 	Window window = Window(width, height, "Mesh Simplification");
 	window.toggleFPS();
@@ -121,6 +121,12 @@ int main(int argc, char *argv[]) {
   		} else {
   			meshA->setVisible(false);
   			meshB->setVisible(true);
+  		}
+
+  		if (inputHandler->flatShading) {
+  			pipeline.setFlatShading(true);
+  		} else { 
+  			pipeline.setFlatShading(false);
   		}
 
   		// Render next frame

@@ -7,6 +7,7 @@ class InputHandler : public InputListener {
 	public:
 		int width, height;
 		bool renderMeshA;
+		bool flatShading;
 	
 		mat4* selectedObject;
 

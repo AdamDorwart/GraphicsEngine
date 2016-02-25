@@ -4,10 +4,10 @@
 
 using namespace glm;
 
-class SimpleShader : public Shader {
+class NormalShader : public Shader {
 	public:
-		SimpleShader();
-		virtual ~SimpleShader();
+		NormalShader();
+		virtual ~NormalShader();
 
 		virtual bool init();
 

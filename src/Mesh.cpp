@@ -207,7 +207,7 @@ bool Mesh::popEdgeCollapse() {
 	buffer[delta.before[1]].v = 1;
 	// Set collapsed verticies to invisible
 	buffer[delta.after].v = 0;
-	
+
 	// Iterate through the previous verticies
 	for (IndexType beforeInd : delta.before) {
 		// Iterate through this previous verticies face adjacencies

@@ -6,6 +6,7 @@
 InputHandler::InputHandler(int _width, int _height) {
 	renderMeshA = true;
 	leftMousePressed = false;
+	flatShading = true;
 	selectedObject = NULL;
 	lastMX = lastMY = 0;
 	width = _width;
@@ -66,6 +67,10 @@ void InputHandler::consumeKey(Window* window, int key, int scancode, int action,
 					glProvokingVertex(GL_LAST_VERTEX_CONVENTION);
 				}
 				break;
+			case GLFW_KEY_4:
+				// enable/disable flat shading
+				flatShading = !flatShading;
+				break;
 			case GLFW_KEY_E:
 				renderMeshA = !renderMeshA;
 				break;
@@ -92,21 +97,48 @@ void InputHandler::consumeKey(Window* window, int key, int scancode, int action,
 					*selectedObject = translate(*selectedObject, vec3(-0.5, 0, 0));
 				}
 				break;
+			case GLFW_KEY_Q:
+				if (selectedMesh != NULL) {
+					selectedMesh->quadricSimplifyStep();
+				}
+				break;
+			case GLFW_KEY_P:
+				if (selectedMesh != NULL) {
+					selectedMesh->popEdgeCollapse();
+				}
+				break;
 		}
 	}
 	if (action == GLFW_REPEAT) {
 		switch (key) {
 			case GLFW_KEY_Q:
 				if (selectedMesh != NULL) {
-					unsigned int size = selectedMesh->getNumberVerticies();
-					for (int i = 0; i < size/500+1; i++) {
-						selectedMesh->quadricSimplifyStep();
-					}
+					selectedMesh->quadricSimplifyStep();
 				}
 				break;
 			case GLFW_KEY_P:
 				if (selectedMesh != NULL) {
 					selectedMesh->popEdgeCollapse();
+				}
+				break;
+			case GLFW_KEY_UP:
+				if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(0, 0.5, 0));
+				}
+				break;
+			case GLFW_KEY_DOWN:
+				if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(0, -0.5, 0));
+				}
+				break;
+			case GLFW_KEY_LEFT:
+				if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(0.5, 0, 0));
+				}
+				break;
+			case GLFW_KEY_RIGHT:
+				if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(-0.5, 0, 0));
 				}
 				break;
 		}

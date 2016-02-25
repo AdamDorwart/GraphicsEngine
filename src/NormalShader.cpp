@@ -1,16 +1,16 @@
-#include "SimpleShader.h"
+#include "NormalShader.h"
 #include <glm/gtc/type_ptr.hpp>
 #include "Logger.h"
 
-SimpleShader::SimpleShader() {
+NormalShader::NormalShader() {
 
 }
 
-SimpleShader::~SimpleShader() {
+NormalShader::~NormalShader() {
 
 }
 
-bool SimpleShader::init() {
+bool NormalShader::init() {
 	if (!Shader::init()) {
 		Logger::err("Unable to initialize shader.\n");
 		return false;
@@ -26,7 +26,7 @@ bool SimpleShader::init() {
 		return false;
 	}
 
-	if (!addShader(GL_FRAGMENT_SHADER, "simple.fs")) {
+	if (!addShader(GL_FRAGMENT_SHADER, "normal.fs")) {
 		Logger::err("Unable to add fragment shader: simple.fs\n");
 		return false;
 	}
@@ -42,11 +42,11 @@ bool SimpleShader::init() {
 	return true;
 }
 
-void SimpleShader::setWVP(mat4 WVP) {
+void NormalShader::setWVP(mat4 WVP) {
 	glUniformMatrix4fv(m_WVPLocation, 1, GL_FALSE, value_ptr(WVP));
 }
 
 
-void SimpleShader::setW(mat4 W) {
+void NormalShader::setW(mat4 W) {
 	glUniformMatrix4fv(m_WorldLocation, 1, GL_FALSE, value_ptr(W));
 }

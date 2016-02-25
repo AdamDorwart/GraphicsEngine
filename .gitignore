@@ -1,4 +1,5 @@
 *.o
 build/*
 media/*
+screenshots/*
 TODO.txt
