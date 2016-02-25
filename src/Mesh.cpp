@@ -21,8 +21,7 @@ Mesh::Mesh() {
 Mesh::Mesh(const Mesh& m) {
 	indicies = m.indicies;
 	buffer = m.buffer;
-	bufferSize = m.bufferSize;
-	buffer.resize(2*bufferSize);
+	buffer.reserve(2*buffer.size());
 
 	vAdjs = m.vAdjs;
 	faces = m.faces;
@@ -44,42 +43,11 @@ void Mesh::draw() {
 	glBindVertexArray(0);
 }
 
-
-// Debugging function - delete asap
-void Mesh::drawEdge(IndexType v1, IndexType v2) {
- 	Datum vec1 = buffer[v1];
-	Datum vec2 = buffer[v2];
-	vec1.c = {1.0, 0, 0};
-	vec2.c = {1.0, 0, 0};
-	Datum vertices[] = { vec1, vec2};
-
-	GLuint vbo, vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(POSITION_LOCATION);
-	glVertexAttribPointer(POSITION_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(Datum), 0);
-
-	glEnableVertexAttribArray(NORMAL_LOCATION);
-	glVertexAttribPointer(NORMAL_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(Datum), (void*)sizeof(vec3));
-
-	glEnableVertexAttribArray(COLOR_LOCATION);
-	glVertexAttribPointer(COLOR_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(Datum), (void*)(2*sizeof(vec3)));
-
-	glEnableVertexAttribArray(VISIBLE_LOCATION);
-	glVertexAttribPointer(VISIBLE_LOCATION, 1, GL_FLOAT, GL_FALSE, sizeof(Datum), (void*)(3*sizeof(vec3)));
-	glDrawArrays(GL_LINES, 0, 2);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), NULL, GL_STATIC_DRAW);
-	glBindVertexArray(0);
-}
-
 IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
 	// These values are floats but shouldn't have any arthimetic being performed on them
 	// i.e: v = 1 or 0
 	// Check if these edges are elligible for collapse
-	if (!buffer[v1].v || !buffer[v2].v || v1 >= 2*bufferSize || v2 >= 2*bufferSize) {
+	if (!buffer[v1].v || !buffer[v2].v || v1 >= 2*buffer.size() || v2 >= 2*buffer.size()) {
 		Logger::err("Verticies are unelligble for collapse\n");
 		return NULL_INDEX;
 	}
@@ -105,7 +73,9 @@ IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
     					std::inserter(vN, vN.end()));
 
 	// New vertex index = end of buffer
-	IndexType vNindex = bufferSize++;
+	IndexType vNindex = buffer.size();
+	// Add new vertex to face adjacency list
+	vAdjs.push_back(vN);
 
 	// Add edge collapse event to history
 	EdgeDelta delta;
@@ -113,15 +83,6 @@ IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
 	delta.before[1] = v2;
 	delta.after = vNindex;
 	collapseHistory.push(delta);
-
-	// Add new vertex to vertex adjacency list
-	auto insertResult = vAdjs.emplace(vNindex, vN);
-	if (!insertResult.second) {
-		// Insert failed - Something bad happend
-		Logger::err("Unable to insert new vertex, index already exists. " 
-			        "This shouldn't happen. Verify edgeCollapse algorithm.\n");
-		return NULL_INDEX;
-	}
 	
 	// New vertex is the midpoint of it's predecessors
 	Datum newData;
@@ -135,12 +96,8 @@ IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
 	buffer[v1].v = 0;
 	buffer[v2].v = 0;
 
-	// Store iterator to new vertex inside vAdjs
-	auto vNit = insertResult.first;
-	VSet* vNptr = &(vNit->second);
-
 	// Iterate through all faces that use the new vertex
-	for (IndexType faceInd : *vNptr) {
+	for (IndexType faceInd : vAdjs[vNindex]) {
 		Triangle& face = faces[faceInd];
 		// Replace old vertices with new
 		for (int i = 0; i < 3; i++) {
@@ -230,15 +187,14 @@ bool Mesh::popEdgeCollapse() {
 
 void Mesh::initializeQuadricError(float threshold) {
 	
-	std::vector<mat4> faceK(faces.size()); // Each face consists of 3 verticies
-	vertexQ.resize(2*bufferSize);
-	vpeLinks.resize(2*bufferSize);
+	std::vector<mat4> faceK(faces.size());
+	vertexQ.resize(2*buffer.size());
+	vpeLinks.resize(2*buffer.size());
 
 	//Logger::info("Calculating face errors\n");
 	// Find the fundamental error quadric of every face
-	for (auto face : faces) {
-		IndexType i = face.first;
-		Triangle& t = face.second;
+	for (IndexType i = 0; i < faces.size(); i++) {
+		Triangle& t = faces[i];
 		vec3 v0 = buffer[t.v[0]].p;
 		vec3 ab = buffer[t.v[1]].p - v0;
 		vec3 ac = buffer[t.v[2]].p - v0;
@@ -253,18 +209,17 @@ void Mesh::initializeQuadricError(float threshold) {
 
 	//Logger::info("Computing Vertex Q's\n");
 	// Compute initial Q for each vertex
-	for (auto vertex : vAdjs) {
-		IndexType i = vertex.first;
-		VSet& faces = vertex.second;
+	for (IndexType i = 0; i < vAdjs.size(); i++) {
+		VSet& adjFaces = vAdjs[i];
 		mat4 Q = mat4(0);
-		for (auto face : faces) {
+		for (auto face : adjFaces) {
 			Q = Q + faceK[face];
 		}
 		vertexQ[i] = Q;
 		//Logger::info("VertexQ[%d]= %s\n",i,to_string(Q).c_str());
 	}
 
-	//Logger::info("Finding all valid pairs.\n");
+	Logger::info("Finding all valid pairs.\n");
 	// Find all Valid Pairs
 	using ValidPairs = std::set<IndexType>;
 	// Combine hashes into a new unique hash - Thanks Boost
@@ -279,10 +234,9 @@ void Mesh::initializeQuadricError(float threshold) {
 	    }
 	};
 	std::unordered_set<ValidPairs, ValidPairsHasher> vp;
-	for (auto vertex : vAdjs) {
-		IndexType i = vertex.first;
-		VSet& adjFaces = vertex.second;
-		//Logger::info("Finding edge pairs for %d\n",i);
+	for (IndexType i = 0; i < vAdjs.size(); i++) {
+		VSet& adjFaces = vAdjs[i];
+		Logger::info("Finding edge pairs for %d\n",i);
 		// Add valid pairs that share an existing edge
 		for (IndexType face_i : adjFaces) {
 			for (auto pair_i : faces[face_i].v) {
@@ -292,15 +246,15 @@ void Mesh::initializeQuadricError(float threshold) {
 					newVP.insert(pair_i);
 					auto result = vp.insert(newVP);
 					// DEBUGGING
-					/*
+					
 					if (result.second) {
 						int i = 0;
 						IndexType v[2];
 						for (auto vertex : *(result.first)) {
 							v[i++] = vertex;
 						}
-						//Logger::info("New VP: (%d,%d)\n", v[0], v[1]);
-					}*/
+						Logger::info("New VP: (%d,%d)\n", v[0], v[1]);
+					}
 				}
 			}
 		}
@@ -333,7 +287,7 @@ void Mesh::initializeQuadricError(float threshold) {
 		*/
 	}
 
-	//Logger::info("Starting VPE creation.\n");
+	Logger::info("Starting VPE creation.\n");
 	// Compute quadric errors for contractrions and add to heap
 	for (auto pair : vp) {
 		int i = 0;
@@ -361,12 +315,12 @@ VPEheap::iterator Mesh::insertVPE(IndexType v0, IndexType v1) {
 	vpe.v[0] = v0;
 	vpe.v[1] = v1;
 
-	//Logger::info("Adding VPE: (%d,%d,%f)\n",vpe.v[0], vpe.v[1], vpe.error);
+	Logger::info("Adding VPE: (%d,%d,%f)\n",vpe.v[0], vpe.v[1], vpe.error);
 
 	// Insert the Valid Pair Error into the heap
 	auto insertResult = vertexErrors.insert(vpe);
 	if (!insertResult.second) {
-		//Logger::info("Duplicate VPE insert (%d,%d)\n",v0, v1);
+		Logger::info("Duplicate VPE insert (%d,%d)\n",v0, v1);
 	}
 	return insertResult.first;
 }
@@ -402,8 +356,8 @@ void Mesh::printVPE(bool showError) {
 }
 
 void Mesh::quadricSimplifyStep() {
-	//printVPElinks(true);
-	//printVPE(false);
+	printVPElinks(true);
+	printVPE(false);
 	
 	// Get the minnimum VPE from the heap
 	auto it = vertexErrors.begin();
@@ -416,7 +370,7 @@ void Mesh::quadricSimplifyStep() {
 	}
 
 	// Add new Q error
-	//Logger::info("Collapsing edge (%d,%d,err=%f->(%d)\n", it->v[0], it->v[1], it->error, newV);
+	Logger::info("Collapsing edge (%d,%d,err=%f->(%d)\n", it->v[0], it->v[1], it->error, newV);
 	vertexQ[newV] = vertexQ[it->v[0]] + vertexQ[it->v[1]];
 
 	std::vector<std::pair<IndexType,VPEheap::iterator>> toRemove;
@@ -466,21 +420,21 @@ void Mesh::quadricSimplifyStep() {
 	for (auto vpeLinkRm : toRemove) {
 		auto result = vpeLinks[vpeLinkRm.first].erase(vpeLinkRm.second);
 		if (result) {
-			//printVPElinks(true);
-			//Logger::info("Removing vpeLink[%d]: (%d,%d,%d)\n",vpeLinkRm.first,vpeLinkRm.second->v[0],vpeLinkRm.second->v[1],vpeLinkRm.second);
+			printVPElinks(true);
+			Logger::info("Removing vpeLink[%d]: (%d,%d,%d)\n",vpeLinkRm.first,vpeLinkRm.second->v[0],vpeLinkRm.second->v[1],vpeLinkRm.second);
 		}
 	}
 	// Add the new ones
 	for (auto vpeLinkAdd : toAdd) {
 		auto result = vpeLinks[vpeLinkAdd.first].insert(vpeLinkAdd.second);
 		if (result.second) {
-			//printVPElinks(true);
-			//Logger::info("Adding vpeLink[%d]: (%d,%d,%d)\n",vpeLinkAdd.first,vpeLinkAdd.second->v[0],vpeLinkAdd.second->v[1],vpeLinkAdd.second);
+			printVPElinks(true);
+			Logger::info("Adding vpeLink[%d]: (%d,%d,%d)\n",vpeLinkAdd.first,vpeLinkAdd.second->v[0],vpeLinkAdd.second->v[1],vpeLinkAdd.second);
 		}
 	}
 
 	// Remove the collapsed pair
-	//Logger::info("Removing main VPE: (%d,%d,%f)\n",it->v[0], it->v[1], it->error);
+	Logger::info("Removing main VPE: (%d,%d,%f)\n",it->v[0], it->v[1], it->error);
 	vertexErrors.erase(it);
 }
 
@@ -491,30 +445,31 @@ vec3 Mesh::collapseVertices(IndexType v0, IndexType v1) {
 void Mesh::createVertexNormals() {
 	std::vector<vec3> faceNormals;
 	faceNormals.resize(faces.size());
-	for (auto face : faces) {
-		vec3 v0 = buffer[face.second.v[0]].p;
-		vec3 v1 = buffer[face.second.v[1]].p;
-		vec3 v2 = buffer[face.second.v[2]].p;
+	for (IndexType i = 0; i < faces.size(); i++) {
+		Triangle& face = faces[i];
+		vec3 v0 = buffer[face.v[0]].p;
+		vec3 v1 = buffer[face.v[1]].p;
+		vec3 v2 = buffer[face.v[2]].p;
 
-		faceNormals[face.first] = cross(v0 - v1, v0 - v2);
+		faceNormals[i] = cross(v0 - v1, v0 - v2);
 	}
 
-	for (auto vertex : vAdjs) {
+	for (IndexType i = 0; i < vAdjs.size(); i++) {
 		vec3 vTot = vec3(0);
-		int i = 0;
-		for (auto face : vertex.second) {
+		int n = 0;
+		for (auto face : vAdjs[i]) {
 			vTot = vTot + faceNormals[face];
-			i++;
+			n++;
 		}
-		vTot = vTot * (1.0f/i);
-		buffer[vertex.first].n = normalize(vTot);
+		vTot = vTot * (1.0f/n);
+		buffer[i].n = normalize(vTot);
 	}
 	updateVBO();
 }
 
 void Mesh::setupBuffers() {
 	// Size of buffer is 2*(# vertices) to leave room for vertices created through edge collapse
-	dataBufferMaxSize = 2 * sizeof(buffer[0]) * bufferSize;
+	dataBufferMaxSize = 2 * sizeof(buffer[0]) * buffer.size();
 	// Number of faces shouldn't increase
 	indexBufferMaxSize = sizeof(indicies[0]) * indicies.size();
 
@@ -578,7 +533,6 @@ bool Mesh::parseOFF(const char* filename) {
 	bool hasReadSize = false;
 
 	IndexType face_i = 0;
-	bufferSize = 0;
 
 	double xmin, xmax, ymin, ymax, zmin, zmax;
 
@@ -615,12 +569,14 @@ bool Mesh::parseOFF(const char* filename) {
 
 		if (!hasReadSize) {
 			// Read object data size
-			//IndexType numVerticies = std::stoi(tokens.at(0));
-			//IndexType numFaces = std::stoi(tokens.at(1));
+			IndexType numVerticies = std::stoi(tokens.at(0));
+			IndexType numFaces = std::stoi(tokens.at(1));
 			//IndexType numEdges = std::stoi(tokens.at(2));
 
-			//buffer.resize(numVerticies);
-			//indicies.resize(3*numFaces);
+			vAdjs.reserve(2*numVerticies);
+			faces.reserve(numFaces);
+			buffer.reserve(2*numVerticies);
+			indicies.reserve(3*numFaces);
 			hasReadSize = true;
 		} else if (tokens.size() == 3) {
 			// Reading vertex
@@ -643,7 +599,7 @@ bool Mesh::parseOFF(const char* filename) {
 			d.v = 1.0; // Visible
 
 			buffer.push_back(d);
-			vAdjs[bufferSize++] = VSet();
+			vAdjs.push_back(VSet());
 
 		} else if (tokens.size() == 4) {
 			// Reading face
@@ -662,12 +618,13 @@ bool Mesh::parseOFF(const char* filename) {
 			vAdjs[v0].insert(face_i);
 			vAdjs[v1].insert(face_i);
 			vAdjs[v2].insert(face_i);
+			face_i++;
 
 			Triangle t;
 			t.v = {v0, v1, v2};
 			t.f = {NULL_INDEX, NULL_INDEX, NULL_INDEX};
 
-			faces[face_i++] = t;
+			faces.push_back(t);
 		}
     }
 
@@ -679,14 +636,16 @@ bool Mesh::parseOFF(const char* filename) {
     			  (zmin + zmax) / 2.0);
 
     // Create Face Adjaceny in Indexed Face list
-	for (auto face : faces) {
-		IndexType v0 = face.second.v[0];
-		IndexType v1 = face.second.v[1];
-		IndexType v2 = face.second.v[2];
+	for (IndexType i = 0; i < faces.size(); i++) {
+		Triangle& face = faces[i];
 
-		VSet v0Adj = vAdjs[v0];
-		VSet v1Adj = vAdjs[v1];
-		VSet v2Adj = vAdjs[v2];
+		IndexType v0 = face.v[0];
+		IndexType v1 = face.v[1];
+		IndexType v2 = face.v[2];
+
+		VSet& v0Adj = vAdjs[v0];
+		VSet& v1Adj = vAdjs[v1];
+		VSet& v2Adj = vAdjs[v2];
 
 		// Size will be 1 or 2
 		VSet v0v1Intersect;
@@ -711,14 +670,11 @@ bool Mesh::parseOFF(const char* filename) {
 		face_i = 0;
 		// Set all the adjacent faces, ignoring the occurance of itself.
 		for (auto adjFace : adjFaces) {
-			if (face.first != adjFace) {
-				face.second.f[face_i++] = adjFace;
+			if (i != adjFace) {
+				face.f[face_i++] = adjFace;
 			}
 		}
 	}
-
-	// Anticipate new verticies for edge collapse
-	buffer.resize(2*bufferSize);
 
     setupBuffers();
     createVertexNormals();
@@ -743,5 +699,5 @@ vec3 Mesh::getCenter() {
 }
 
 IndexType Mesh::getNumberVerticies() {
-	return bufferSize;
+	return buffer.size();
 }

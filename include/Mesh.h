@@ -74,7 +74,6 @@ class Mesh : public SceneNode {
 		//Storage vectors
 		std::vector<IndexType> indicies;
 		std::vector<Datum> buffer;
-		IndexType bufferSize;
 
 		double maxWidth, maxHeight, maxDepth;
 		vec3 center;
@@ -84,9 +83,8 @@ class Mesh : public SceneNode {
 		unsigned int dataBufferMaxSize;
 		unsigned int indexBufferMaxSize;
 
-		// TODO these are just vectors...??
-		std::unordered_map<IndexType, VSet> vAdjs; // Vertex-Face Adj list
-		std::unordered_map<IndexType, Triangle> faces; // Indexed Face list
+		std::vector<VSet> vAdjs; // Vertex-Face Adj list
+		std::vector<Triangle> faces; // Indexed Face list
  		// Links a vertex to all of it's member pairs in the VPEheap
 		std::vector<std::set<VPEheap::iterator, VPEheapItComp>> vpeLinks;
 
