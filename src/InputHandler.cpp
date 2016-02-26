@@ -107,6 +107,20 @@ void InputHandler::consumeKey(Window* window, int key, int scancode, int action,
 					selectedMesh->popEdgeCollapse();
 				}
 				break;
+			case GLFW_KEY_W:
+				if (selectedMesh != NULL) {
+					for (int i = 0; i < 300; i++) {
+						selectedMesh->quadricSimplifyStep();
+					}
+				}
+				break;
+			case GLFW_KEY_O:
+				if (selectedMesh != NULL) {
+					for (int i = 0; i < 300; i++) {
+						selectedMesh->popEdgeCollapse();
+					}
+				}
+				break;
 		}
 	}
 	if (action == GLFW_REPEAT) {

@@ -54,6 +54,18 @@ IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
 	VSet* v1Adj = &vAdjs[v1];
 	VSet* v2Adj = &vAdjs[v2];
 
+	Logger::info("Collapsing (%d,%d) (n=%d,n=%d)\n",v1,v2, v1Adj->size(), v2Adj->size());
+	Logger::info("v[%d]{",v1);
+	for (auto face : *v1Adj) {
+		Logger::info("%d,",face);
+	}
+	Logger::info("}\n");
+	Logger::info("v[%d]{",v2);
+	for (auto face : *v2Adj) {
+		Logger::info("%d,",face);
+	}
+	Logger::info("}\n");
+
 	// Removed Faces = v1 intersect v2
 	// O(2*(v1Adj.size+v2Adj.size)-1) ; Linear in # Adj
 	VSet removedFaces;
@@ -71,7 +83,9 @@ IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
 	std::set_difference(vUnion.begin(), vUnion.end(), 
 						removedFaces.begin(), removedFaces.end(),
     					std::inserter(vN, vN.end()));
-
+	if (buffer.size() != vAdjs.size()) {
+		Logger::err("BAD");
+	}
 	// New vertex index = end of buffer
 	IndexType vNindex = buffer.size();
 	// Add new vertex to face adjacency list
@@ -120,7 +134,7 @@ IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
 					IndexType faceToRemove = face_adj;
 					// Iterate through the removed face's adjacent faces
 					for (IndexType& face_i_adj : faces[faceToRemove].f) {
-						if (face_adj == NULL_INDEX) {
+						if (face_i_adj == NULL_INDEX) {
 							continue;
 						}
 						// Current face can't be adjacent to itself
@@ -132,8 +146,13 @@ IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
 									// face that our current face must now be adjacent
 									// to. Update current faces adjaceny and move on
 									// to next face.
-									face.f[faceToRemove] = face_i_adj;
-									b = true; break;
+									for (int i = 0; i < 3; i++) {
+										if (faces[faceInd].f[i] == faceToRemove) {
+											faces[faceInd].f[i] = face_i_adj;
+											b = true; break;
+										}
+									}
+									if (b) break;
 								}
 							}
 							if (b) break;
@@ -548,6 +567,8 @@ bool Mesh::parseOFF(const char* filename) {
 	// Clear old mesh data
 	buffer.clear();
 	indicies.clear();
+	vAdjs.clear();
+	faces.clear();
 
 	// Check if header string is valid
 	std::getline(infile, line);
@@ -676,7 +697,7 @@ bool Mesh::parseOFF(const char* filename) {
 			}
 		}
 	}
-
+/*
 	for (IndexType i = 0; i < faces.size(); i++) {
 		Logger::info("faces[%d]: {%d,%d,%d}{%d,%d,%d}\n",i,faces[i].v[0],
 			faces[i].v[1],faces[i].v[2],faces[i].f[0],faces[i].f[1],faces[i].f[2]);
@@ -689,7 +710,7 @@ bool Mesh::parseOFF(const char* filename) {
 		}
 		Logger::info("}\n");
 	}
-
+*/
 
     setupBuffers();
     createVertexNormals();
