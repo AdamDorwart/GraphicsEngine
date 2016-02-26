@@ -43,28 +43,16 @@ void Mesh::draw() {
 	glBindVertexArray(0);
 }
 
-IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
+IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2, bool updateVbo) {
 	// These values are floats but shouldn't have any arthimetic being performed on them
 	// i.e: v = 1 or 0
 	// Check if these edges are elligible for collapse
-	if (!buffer[v1].v || !buffer[v2].v || v1 >= 2*buffer.size() || v2 >= 2*buffer.size()) {
+	/*if (!buffer[v1].v || !buffer[v2].v || v1 >= 2*buffer.size() || v2 >= 2*buffer.size()) {
 		Logger::err("Verticies are unelligble for collapse\n");
 		return NULL_INDEX;
-	}
+	}*/
 	VSet* v1Adj = &vAdjs[v1];
 	VSet* v2Adj = &vAdjs[v2];
-
-	Logger::info("Collapsing (%d,%d) (n=%d,n=%d)\n",v1,v2, v1Adj->size(), v2Adj->size());
-	Logger::info("v[%d]{",v1);
-	for (auto face : *v1Adj) {
-		Logger::info("%d,",face);
-	}
-	Logger::info("}\n");
-	Logger::info("v[%d]{",v2);
-	for (auto face : *v2Adj) {
-		Logger::info("%d,",face);
-	}
-	Logger::info("}\n");
 
 	// Removed Faces = v1 intersect v2
 	// O(2*(v1Adj.size+v2Adj.size)-1) ; Linear in # Adj
@@ -166,12 +154,14 @@ IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2) {
 	}
 
 	// Upload the mesh data to the graphics driver
-	updateVBO();
+	if (updateVbo) {
+		updateVBO();
+	}
 
 	return vNindex;
 }
 
-bool Mesh::popEdgeCollapse() {
+bool Mesh::popEdgeCollapse(bool updateVbo) {
 	if (collapseHistory.size() == 0) {
 		return false;
 	}
@@ -199,14 +189,17 @@ bool Mesh::popEdgeCollapse() {
 	}
 	
 	// Upload the mesh data to the graphics driver
-	updateVBO();
+	if (updateVbo) {
+		updateVBO();
+	}
 	collapseHistory.pop();
 	return true;
 }
 
 void Mesh::initializeQuadricError(float threshold) {
 	
-	std::vector<mat4> faceK(faces.size());
+	std::vector<mat4> faceK;
+	faceK.reserve(faces.size());
 	vertexQ.reserve(2*buffer.size());
 	vpeLinks.resize(2*buffer.size());
 
@@ -375,15 +368,20 @@ void Mesh::printVPE(bool showError) {
 	Logger::info("}\n");
 }
 
-void Mesh::quadricSimplifyStep() {
+void Mesh::quadricSimplifyStep(bool updateVbo) {
 	//printVPElinks(true);
 	//printVPE(false);
+	
+	// Simple heuristic to prevent segfaults until vpeLinks bug is fixed
+	if (vertexErrors.size() < 5) {
+		return;
+	}
 	
 	// Get the minnimum VPE from the heap
 	auto it = vertexErrors.begin();
 	
 	// Collapse the edge
-	IndexType newV = pushEdgeCollapse(it->v[0], it->v[1]);
+	IndexType newV = pushEdgeCollapse(it->v[0], it->v[1], updateVbo);
 	if (newV == NULL_INDEX) {
 		Logger::err("Unable to collapse verticies (%d,%d)\n", it->v[0], it->v[1]);
 		return;

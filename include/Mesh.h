@@ -44,7 +44,7 @@ struct ValidPairError {
 	float error;
 	std::array<IndexType,2> v;
 	inline bool operator<(const ValidPairError& rhs) const {
-		if (error == rhs.error) {
+		if (!(error < rhs.error) && !(rhs.error < error)) {
 			return std::lexicographical_compare(v.begin(),v.end(),
         								   		rhs.v.begin(),rhs.v.end());
 		} else {
@@ -114,9 +114,9 @@ class Mesh : public SceneNode {
 
 		bool parseOFF(const char* filename);
 
-		IndexType pushEdgeCollapse(IndexType v1, IndexType v2);
-		bool popEdgeCollapse();
-		void quadricSimplifyStep();
+		IndexType pushEdgeCollapse(IndexType v1, IndexType v2, bool updateVbo=true);
+		bool popEdgeCollapse(bool updateVbo=true);
+		void quadricSimplifyStep(bool updateVbo=true);
 
 		void createVertexNormals();
 
