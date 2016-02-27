@@ -109,7 +109,7 @@ void InputHandler::consumeKey(Window* window, int key, int scancode, int action,
 				break;
 			case GLFW_KEY_W:
 				if (selectedMesh != NULL) {
-					for (int i = 0; i < 500; i++) {
+					for (int i = 0; i < 300; i++) {
 						selectedMesh->quadricSimplifyStep(false);
 					}
 					selectedMesh->updateVBO();
@@ -117,7 +117,7 @@ void InputHandler::consumeKey(Window* window, int key, int scancode, int action,
 				break;
 			case GLFW_KEY_O:
 				if (selectedMesh != NULL) {
-					for (int i = 0; i < 500; i++) {
+					for (int i = 0; i < 300; i++) {
 						selectedMesh->popEdgeCollapse();
 					}
 				}

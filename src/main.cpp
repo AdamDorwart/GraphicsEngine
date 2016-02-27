@@ -52,8 +52,10 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	int width = 2560;
-	int height = 1440;
+	int width = 1280;
+	int height = 720;
+	//int width = 2560;
+	//int height = 1440;
 
 	// Setup Window
 	Window window = Window(width, height, "Mesh Simplification");

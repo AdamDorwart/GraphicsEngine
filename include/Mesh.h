@@ -72,7 +72,7 @@ struct Datum {
 class Mesh : public SceneNode {
 	protected:
 		//Storage vectors
-		std::vector<IndexType> indicies;
+		std::vector<IndexType> indices;
 		std::vector<Datum> buffer;
 
 		double maxWidth, maxHeight, maxDepth;
@@ -85,12 +85,12 @@ class Mesh : public SceneNode {
 
 		std::vector<VSet> vAdjs; // Vertex-Face Adj list
 		std::vector<Triangle> faces; // Indexed Face list
- 		// Links a vertex to all of it's member pairs in the VPEheap
-		std::vector<std::set<VPEheap::iterator, VPEheapItComp>> vpeLinks;
 
 		std::stack<EdgeDelta> collapseHistory;
 		std::vector<mat4> vertexQ; // Q error matrix for each vertex
 		VPEheap vertexErrors; // Sorts the pairs by error
+		// Links a vertex to all of it's member pairs in the VPEheap
+		std::vector<std::set<VPEheap::iterator, VPEheapItComp>> vpeLinks;
 
 		void printVPElinks(bool showV);
 		void printVPE(bool showError);

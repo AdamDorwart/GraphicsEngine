@@ -19,7 +19,7 @@ Mesh::Mesh() {
 
 // Copy constructor
 Mesh::Mesh(const Mesh& m) {
-	indicies = m.indicies;
+	indices = m.indices;
 	buffer = m.buffer;
 	buffer.reserve(2*buffer.size());
 
@@ -38,7 +38,7 @@ Mesh::~Mesh() {
 void Mesh::draw() {
 	glBindVertexArray(VAO);
 
-	glDrawElements(GL_TRIANGLES, indicies.size(), IndexTypeGL, (void*)0);
+	glDrawElements(GL_TRIANGLES, indices.size(), IndexTypeGL, (void*)0);
 
 	glBindVertexArray(0);
 }
@@ -47,10 +47,10 @@ IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2, bool updateVbo) {
 	// These values are floats but shouldn't have any arthimetic being performed on them
 	// i.e: v = 1 or 0
 	// Check if these edges are elligible for collapse
-	/*if (!buffer[v1].v || !buffer[v2].v || v1 >= 2*buffer.size() || v2 >= 2*buffer.size()) {
+	if (!buffer[v1].v || !buffer[v2].v || v1 >= 2*buffer.size() || v2 >= 2*buffer.size()) {
 		Logger::err("Verticies are unelligble for collapse\n");
 		return NULL_INDEX;
-	}*/
+	}
 	VSet* v1Adj = &vAdjs[v1];
 	VSet* v2Adj = &vAdjs[v2];
 
@@ -71,9 +71,7 @@ IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2, bool updateVbo) {
 	std::set_difference(vUnion.begin(), vUnion.end(), 
 						removedFaces.begin(), removedFaces.end(),
     					std::inserter(vN, vN.end()));
-	if (buffer.size() != vAdjs.size()) {
-		Logger::err("BAD");
-	}
+
 	// New vertex index = end of buffer
 	IndexType vNindex = buffer.size();
 	// Add new vertex to face adjacency list
@@ -105,7 +103,7 @@ IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2, bool updateVbo) {
 		for (int i = 0; i < 3; i++) {
 			if (faces[faceInd].v[i] == v1 || faces[faceInd].v[i] == v2) {
 				faces[faceInd].v[i] = vNindex;
-				indicies[3*faceInd+i] = vNindex;
+				indices[3*faceInd+i] = vNindex;
 			}
 		}
 		// Fix face adj
@@ -181,7 +179,7 @@ bool Mesh::popEdgeCollapse(bool updateVbo) {
 			for (int i = 0; i < 3; i++) {
 				if (faces[faceInd].v[i] == delta.after) {
 					faces[faceInd].v[i] = beforeInd;
-					indicies[3*faceInd+i] = beforeInd;
+					indices[3*faceInd+i] = beforeInd;
 					break;
 				}
 			}
@@ -489,7 +487,7 @@ void Mesh::setupBuffers() {
 	// Size of buffer is 2*(# vertices) to leave room for vertices created through edge collapse
 	dataBufferMaxSize = 2 * sizeof(buffer[0]) * buffer.size();
 	// Number of faces shouldn't increase
-	indexBufferMaxSize = sizeof(indicies[0]) * indicies.size();
+	indexBufferMaxSize = sizeof(indices[0]) * indices.size();
 
 	// Generate the Vertex Array and bind to it
 	glGenVertexArrays(1, &VAO);
@@ -536,7 +534,7 @@ void Mesh::updateVBO() {
 
 	// Orphan the old index VBO
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferMaxSize, NULL, GL_STREAM_DRAW);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferMaxSize, &indicies[0], GL_STREAM_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferMaxSize, &indices[0], GL_STREAM_DRAW);
 
 	glBindVertexArray(0);
 }
@@ -564,7 +562,7 @@ bool Mesh::parseOFF(const char* filename) {
 
 	// Clear old mesh data
 	buffer.clear();
-	indicies.clear();
+	indices.clear();
 	vAdjs.clear();
 	faces.clear();
 
@@ -596,7 +594,7 @@ bool Mesh::parseOFF(const char* filename) {
 			vAdjs.reserve(2*numVerticies);
 			faces.reserve(numFaces);
 			buffer.reserve(2*numVerticies);
-			indicies.reserve(3*numFaces);
+			indices.reserve(3*numFaces);
 			hasReadSize = true;
 		} else if (tokens.size() == 3) {
 			// Reading vertex
@@ -631,9 +629,9 @@ bool Mesh::parseOFF(const char* filename) {
 			IndexType v1 = std::stoi(tokens.at(2));
 			IndexType v2 = std::stoi(tokens.at(3));
 
-			indicies.push_back(v0);
-			indicies.push_back(v1);
-			indicies.push_back(v2);
+			indices.push_back(v0);
+			indices.push_back(v1);
+			indices.push_back(v2);
 
 			vAdjs[v0].insert(face_i);
 			vAdjs[v1].insert(face_i);
@@ -709,6 +707,7 @@ bool Mesh::parseOFF(const char* filename) {
 		Logger::info("}\n");
 	}
 */
+	//Logger::info("Num of faces: %d\n", faces.size());
 
     setupBuffers();
     createVertexNormals();
