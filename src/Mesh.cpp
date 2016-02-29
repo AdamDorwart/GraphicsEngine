@@ -623,7 +623,7 @@ bool Mesh::parseOFF(const char* filename) {
 		} else if (tokens.size() == 4) {
 			// Reading face
 			if (tokens.at(0).compare("3") != 0) {
-				LOG_ERR("Error parsing %s: file format uses non-triangle faces (%s)\n", filename, line);
+				LOG_ERR("Error parsing %s: file format uses non-triangle faces (%s)\n", filename, line.c_str());
 				return false;
 			}
 			IndexType v0 = std::stoi(tokens.at(1));
