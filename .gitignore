@@ -1,5 +1,10 @@
-*.o
-build/*
-media/*
-screenshots/*
-TODO.txt
+# Ignore root files/directories
+/*
+/*/
+
+# But not these ones
+!.gitignore
+!CMakeLists.txt
+!README.md
+!/src/
+!/include/

@@ -6,10 +6,11 @@
 #include <unordered_set>
 #include <glm/gtc/matrix_transform.hpp>
 
-
 // For debugging
+#ifndef NDEBUG
 #include <glm/gtx/string_cast.hpp>
-//#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#endif
 
 using namespace Util;
 
@@ -48,7 +49,7 @@ IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2, bool updateVbo) {
 	// i.e: v = 1 or 0
 	// Check if these edges are elligible for collapse
 	if (!buffer[v1].v || !buffer[v2].v || v1 >= 2*buffer.size() || v2 >= 2*buffer.size()) {
-		Logger::err("Verticies are unelligble for collapse\n");
+		LOG_ERR("Verticies are unelligble for collapse\n");
 		return NULL_INDEX;
 	}
 	VSet* v1Adj = &vAdjs[v1];
@@ -201,7 +202,7 @@ void Mesh::initializeQuadricError(float threshold) {
 	vertexQ.reserve(2*buffer.size());
 	vpeLinks.resize(2*buffer.size());
 
-	//Logger::info("Calculating face errors\n");
+	//LOG_INFO("Calculating face errors\n");
 	// Find the fundamental error quadric of every face
 	for (IndexType i = 0; i < faces.size(); i++) {
 		Triangle& t = faces[i];
@@ -214,10 +215,10 @@ void Mesh::initializeQuadricError(float threshold) {
 		mat4 K = outerProduct(p, p);
 
 		faceK.push_back(K);
-		//Logger::info("Facek[%d]= %s\n",i,to_string(K).c_str());
+		//LOG_INFO("Facek[%d]= %s\n",i,to_string(K).c_str());
 	}
 
-	//Logger::info("Computing Vertex Q's\n");
+	//LOG_INFO("Computing Vertex Q's\n");
 	// Compute initial Q for each vertex
 	for (IndexType i = 0; i < vAdjs.size(); i++) {
 		VSet& adjFaces = vAdjs[i];
@@ -226,10 +227,10 @@ void Mesh::initializeQuadricError(float threshold) {
 			Q = Q + faceK[face];
 		}
 		vertexQ.push_back(Q);
-		//Logger::info("VertexQ[%d]= %s\n",i,to_string(Q).c_str());
+		//LOG_INFO("VertexQ[%d]= %s\n",i,to_string(Q).c_str());
 	}
 
-	//Logger::info("Finding all valid pairs.\n");
+	//LOG_INFO("Finding all valid pairs.\n");
 	// Find all Valid Pairs
 	using ValidPairs = std::set<IndexType>;
 	// Combine hashes into a new unique hash - Thanks Boost
@@ -246,7 +247,7 @@ void Mesh::initializeQuadricError(float threshold) {
 	std::unordered_set<ValidPairs, ValidPairsHasher> vp;
 	for (IndexType i = 0; i < vAdjs.size(); i++) {
 		VSet& adjFaces = vAdjs[i];
-		//Logger::info("Finding edge pairs for %d\n",i);
+		//LOG_INFO("Finding edge pairs for %d\n",i);
 		// Add valid pairs that share an existing edge
 		for (IndexType face_i : adjFaces) {
 			for (auto pair_i : faces[face_i].v) {
@@ -263,13 +264,13 @@ void Mesh::initializeQuadricError(float threshold) {
 						for (auto vertex : *(result.first)) {
 							v[i++] = vertex;
 						}
-						Logger::info("New VP: (%d,%d)\n", v[0], v[1]);
+						LOG_INFO("New VP: (%d,%d)\n", v[0], v[1]);
 					}
 					*/
 				}
 			}
 		}
-		//Logger::info("Finding distance pairs for %d\n",i);
+		//LOG_INFO("Finding distance pairs for %d\n",i);
 		// Add valid pairs of vertices that are within threshold distance
 		// to each other
 		// Iterate through every other vertex
@@ -290,7 +291,7 @@ void Mesh::initializeQuadricError(float threshold) {
 						for (auto vertex : *(result.first)) {
 							v[i++] = vertex;
 						}
-						//Logger::info("New VP: (%d,%d)\n", v[0], v[1]);
+						//LOG_INFO("New VP: (%d,%d)\n", v[0], v[1]);
 					}
 				}
 			}
@@ -298,7 +299,7 @@ void Mesh::initializeQuadricError(float threshold) {
 		*/
 	}
 
-	//Logger::info("Starting VPE creation.\n");
+	//LOG_INFO("Starting VPE creation.\n");
 	// Compute quadric errors for contractrions and add to heap
 	for (auto pair : vp) {
 		int i = 0;
@@ -326,44 +327,44 @@ VPEheap::iterator Mesh::insertVPE(IndexType v0, IndexType v1) {
 	vpe.v[0] = v0;
 	vpe.v[1] = v1;
 
-	//Logger::info("Adding VPE: (%d,%d,%f)\n",vpe.v[0], vpe.v[1], vpe.error);
+	//LOG_INFO("Adding VPE: (%d,%d,%f)\n",vpe.v[0], vpe.v[1], vpe.error);
 
 	// Insert the Valid Pair Error into the heap
 	auto insertResult = vertexErrors.insert(vpe);
 	if (!insertResult.second) {
-		//Logger::info("Duplicate VPE insert (%d,%d)\n",v0, v1);
+		//LOG_INFO("Duplicate VPE insert (%d,%d)\n",v0, v1);
 	}
 	return insertResult.first;
 }
 
 void Mesh::printVPElinks(bool showV) {
-	Logger::info("VPElinks state:\n");
+	LOG_INFO("VPElinks state:\n");
 	for (IndexType i = 0; i < vpeLinks.size(); i++) {
 		if (vpeLinks[i].size() == 0) {
 			continue;
 		}
-		Logger::info("vpeLinks[%d] = {",i);
+		LOG_INFO("vpeLinks[%d] = {",i);
 		for (auto adjV : vpeLinks[i]) {
 			if (showV) {
-				Logger::info("{%d,%d,%d}",adjV->v[0],adjV->v[1],adjV);
+				LOG_INFO("{%d,%d,%d}",adjV->v[0],adjV->v[1],adjV);
 			} else {
-				Logger::info("{%d}",adjV);
+				LOG_INFO("{%d}",adjV);
 			}
 		}
-		Logger::info("}\n");
+		LOG_INFO("}\n");
 	}
 }
 
 void Mesh::printVPE(bool showError) {
-	Logger::info("VPE :{");
+	LOG_INFO("VPE :{");
 	for (auto pair : vertexErrors) {
 		if (showError) {
-			Logger::info("{%d,%d,e=%f}",pair.v[0],pair.v[1],pair.error);
+			LOG_INFO("{%d,%d,e=%f}",pair.v[0],pair.v[1],pair.error);
 		} else {
-			Logger::info("{%d,%d}",pair.v[0],pair.v[1]);
+			LOG_INFO("{%d,%d}",pair.v[0],pair.v[1]);
 		}
 	}
-	Logger::info("}\n");
+	LOG_INFO("}\n");
 }
 
 void Mesh::quadricSimplifyStep(bool updateVbo) {
@@ -381,12 +382,12 @@ void Mesh::quadricSimplifyStep(bool updateVbo) {
 	// Collapse the edge
 	IndexType newV = pushEdgeCollapse(it->v[0], it->v[1], updateVbo);
 	if (newV == NULL_INDEX) {
-		Logger::err("Unable to collapse verticies (%d,%d)\n", it->v[0], it->v[1]);
+		LOG_ERR("Unable to collapse verticies (%d,%d)\n", it->v[0], it->v[1]);
 		return;
 	}
 
 	// Add new Q error
-	//Logger::info("Collapsing edge (%d,%d,err=%f->(%d)\n", it->v[0], it->v[1], it->error, newV);
+	//LOG_INFO("Collapsing edge (%d,%d,err=%f->(%d)\n", it->v[0], it->v[1], it->error, newV);
 	vertexQ.push_back(vertexQ[it->v[0]] + vertexQ[it->v[1]]);
 
 	std::vector<std::pair<IndexType,VPEheap::iterator>> toRemove;
@@ -437,7 +438,7 @@ void Mesh::quadricSimplifyStep(bool updateVbo) {
 		auto result = vpeLinks[vpeLinkRm.first].erase(vpeLinkRm.second);
 		if (result) {
 			//printVPElinks(true);
-			//Logger::info("Removing vpeLink[%d]: (%d,%d,%d)\n",vpeLinkRm.first,vpeLinkRm.second->v[0],vpeLinkRm.second->v[1],vpeLinkRm.second);
+			//LOG_INFO("Removing vpeLink[%d]: (%d,%d,%d)\n",vpeLinkRm.first,vpeLinkRm.second->v[0],vpeLinkRm.second->v[1],vpeLinkRm.second);
 		}
 	}
 	// Add the new ones
@@ -445,12 +446,12 @@ void Mesh::quadricSimplifyStep(bool updateVbo) {
 		auto result = vpeLinks[vpeLinkAdd.first].insert(vpeLinkAdd.second);
 		if (result.second) {
 			//printVPElinks(true);
-			//Logger::info("Adding vpeLink[%d]: (%d,%d,%d)\n",vpeLinkAdd.first,vpeLinkAdd.second->v[0],vpeLinkAdd.second->v[1],vpeLinkAdd.second);
+			//LOG_INFO("Adding vpeLink[%d]: (%d,%d,%d)\n",vpeLinkAdd.first,vpeLinkAdd.second->v[0],vpeLinkAdd.second->v[1],vpeLinkAdd.second);
 		}
 	}
 
 	// Remove the collapsed pair
-	//Logger::info("Removing main VPE: (%d,%d,%f)\n",it->v[0], it->v[1], it->error);
+	//LOG_INFO("Removing main VPE: (%d,%d,%f)\n",it->v[0], it->v[1], it->error);
 	vertexErrors.erase(it);
 }
 
@@ -556,7 +557,7 @@ bool Mesh::parseOFF(const char* filename) {
 	xmax = ymax = zmax = std::numeric_limits<double>::min();
 
 	if (!infile.is_open() || infile.bad() || !infile.good() || infile.fail()) {
-		Logger::err("Error opening file [%s]\n", (std::string(MODEL_PATH) + filename).c_str());
+		LOG_ERR("Error opening file [%s]\n", (std::string(MODEL_PATH) + filename).c_str());
 		return false;
 	}
 
@@ -569,7 +570,7 @@ bool Mesh::parseOFF(const char* filename) {
 	// Check if header string is valid
 	std::getline(infile, line);
 	if (line.find("OFF") == std::string::npos) {
-		Logger::err("%s: file does not follow the OFF specification\n", filename);
+		LOG_ERR("%s: file does not follow the OFF specification\n", filename);
 		return false;
 	}
 
@@ -622,7 +623,7 @@ bool Mesh::parseOFF(const char* filename) {
 		} else if (tokens.size() == 4) {
 			// Reading face
 			if (tokens.at(0).compare("3") != 0) {
-				Logger::err("Error parsing %s: file format uses non-triangle faces (%s)\n", filename, line);
+				LOG_ERR("Error parsing %s: file format uses non-triangle faces (%s)\n", filename, line);
 				return false;
 			}
 			IndexType v0 = std::stoi(tokens.at(1));
@@ -693,21 +694,23 @@ bool Mesh::parseOFF(const char* filename) {
 			}
 		}
 	}
-/*
+
+#ifndef NDEBUG
 	for (IndexType i = 0; i < faces.size(); i++) {
-		Logger::info("faces[%d]: {%d,%d,%d}{%d,%d,%d}\n",i,faces[i].v[0],
+		LOG_INFO("faces[%d]: {%d,%d,%d}{%d,%d,%d}\n",i,faces[i].v[0],
 			faces[i].v[1],faces[i].v[2],faces[i].f[0],faces[i].f[1],faces[i].f[2]);
 	}
 
 	for (IndexType i = 0; i < vAdjs.size(); i++) {
-		Logger::info("vAdjs[%d]:{",i);
+		LOG_INFO("vAdjs[%d]:{",i);
 		for (auto face : vAdjs[i]) {
-			Logger::info("%d,",face);
+			LOG_INFO("%d,",face);
 		}
-		Logger::info("}\n");
+		LOG_INFO("}\n");
 	}
-*/
-	//Logger::info("Num of faces: %d\n", faces.size());
+#endif
+
+	LOG_INFO("Num of faces: %d\n", faces.size());
 
     setupBuffers();
     createVertexNormals();

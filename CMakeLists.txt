@@ -1,10 +1,20 @@
 cmake_minimum_required(VERSION 3.0)
 project(MeshSimplification)
 
+if (NOT CMAKE_BUILD_TYPE)
+	message(STATUS "No build type selected, default to Release")
+	set(CMAKE_BUILD_TYPE "Release")
+endif()
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
 link_libraries(m glfw3 GLEW GL X11 Xi Xrandr Xxf86vm Xinerama Xcursor dl pthread)
 
 include_directories(include)
 
+# Compiler arguments
+add_definitions(-Wall -std=c++11)
+
+# Compiler macro definitions
 add_definitions(-DLOG_FILE="log.txt"
 				-DSHADER_PATH="../src/shaders/"
 				-DMODEL_PATH="../media/")
@@ -23,6 +33,5 @@ set(SOURCES
 	src/FlatShader.cpp
 	src/NormalShader.cpp)
 
-set(CMAKE_CXX_FLAGS "-O3 -Wall -std=c++11")
 add_executable(program ${SOURCES})
 

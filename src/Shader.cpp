@@ -52,7 +52,7 @@ char* Shader::readFile(const char *filename)
     //Open the file
 	FILE* fp = fopen((std::string(SHADER_PATH) + filename).c_str() , "rb");
 	if(!fp) {
-		Logger::err("File doesn't exist [%s]", (std::string(SHADER_PATH) + filename).c_str());
+		LOG_ERR("File doesn't exist [%s]", (std::string(SHADER_PATH) + filename).c_str());
         exit(EXIT_FAILURE);
     }
     
@@ -77,7 +77,7 @@ bool Shader::init()
 	m_shaderProg = glCreateProgram();
 
 	if (m_shaderProg == 0) {
-		Logger::err("Error creating shader program\n");
+		LOG_ERR("Error creating shader program\n");
 		return false;
 	}
 
@@ -94,7 +94,7 @@ bool Shader::addShader(GLenum ShaderType, const char* pFilename)
 	GLuint ShaderObj = glCreateShader(ShaderType);
 
 	if (ShaderObj == 0) {
-		Logger::err("Error creating shader type %d\n", ShaderType);
+		LOG_ERR("Error creating shader type %d\n", ShaderType);
 		return false;
 	}
 
@@ -115,7 +115,7 @@ bool Shader::addShader(GLenum ShaderType, const char* pFilename)
 	if (!success) {
 		GLchar InfoLog[2048];
 		glGetShaderInfoLog(ShaderObj, sizeof(InfoLog), NULL, InfoLog);
-		Logger::err("Error compiling '%s': '%s'\n", pFilename, InfoLog);
+		LOG_ERR("Error compiling '%s': '%s'\n", pFilename, InfoLog);
 		return false;
 	}
 
@@ -137,7 +137,7 @@ bool Shader::finalize()
 	glGetProgramiv(m_shaderProg, GL_LINK_STATUS, &Success);
 	if (Success == 0) {
 		glGetProgramInfoLog(m_shaderProg, sizeof(ErrorLog), NULL, ErrorLog);
-		Logger::err("Error linking shader program: '%s'\n", ErrorLog);
+		LOG_ERR("Error linking shader program: '%s'\n", ErrorLog);
 		return false;
 	}
 
@@ -173,7 +173,7 @@ GLint Shader::getUniformLocation(const char* pUniformName)
 	GLint Location = glGetUniformLocation(m_shaderProg, pUniformName);
 
 	if (Location == -1) {
-		Logger::err("Warning! Unable to get the location of uniform '%s'\n", pUniformName);
+		LOG_ERR("Warning! Unable to get the location of uniform '%s'\n", pUniformName);
 	}
 
 	return Location;

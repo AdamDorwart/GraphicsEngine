@@ -20,22 +20,22 @@ void handleGLerror() {
 	while((err = glGetError()) != GL_NO_ERROR) {
 		switch (err) {
 			case GL_INVALID_ENUM:
-				Logger::err("GL error: Invalid enum \n");
+				LOG_ERR("GL error: Invalid enum \n");
 				break;
 			case GL_INVALID_VALUE:
-				Logger::err("GL error: Invalid value\n");
+				LOG_ERR("GL error: Invalid value\n");
 				break;
 			case GL_INVALID_OPERATION:
-				Logger::err("GL error: Invalid operation\n");
+				LOG_ERR("GL error: Invalid operation\n");
 				break;
 			case GL_INVALID_FRAMEBUFFER_OPERATION:
-				Logger::err("GL error: Invalid framebuffer operation\n");
+				LOG_ERR("GL error: Invalid framebuffer operation\n");
 				break;
 			case GL_OUT_OF_MEMORY:
-				Logger::err("GL error: Out of memory\n");
+				LOG_ERR("GL error: Out of memory\n");
 				break;
 			default:
-				Logger::err("GL error: Unknown");
+				LOG_ERR("GL error: Unknown");
 		}
 		error = true;
 	}
@@ -48,7 +48,7 @@ void handleGLerror() {
 int main(int argc, char *argv[]) {
 	assert(Logger::start());
 	if (argc != 2) {
-		Logger::err("Error: No mesh file provided.\n");
+		LOG_ERR("Error: No mesh file provided.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 	// Setup mesh
 	Mesh* meshA = new Mesh();
 	if (!meshA->parseOFF(argv[1])) {
-		Logger::err("Error: Unable to continue without mesh.\n");
+		LOG_ERR("Error: Unable to continue without mesh.\n");
 		exit(EXIT_FAILURE);
 	}
 	inputHandler->selectedMesh = meshA;
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 	Mesh* meshB = new Mesh();
 	//meshB.edgeCollapse(11,23);
 	if (!meshB->parseOFF(argv[1])) {
-		Logger::err("Error: Unable to continue without mesh.\n");
+		LOG_ERR("Error: Unable to continue without mesh.\n");
 		exit(EXIT_FAILURE);
 	}
 	//meshB->pushEdgeCollapse(0,1);
