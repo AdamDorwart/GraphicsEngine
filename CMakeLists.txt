@@ -14,6 +14,8 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "")
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "")
 set(GLFW_INSTALL OFF CACHE BOOL "")
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
 set(SOURCES 
     src/main.cpp
     src/Logger.cpp
@@ -54,8 +56,6 @@ add_definitions(
   -DGLEW_STATIC
 )
 
-# Compiler arguments
-add_definitions(-Wall -std=c++11)
 
 if (APPLE)
   if (EXISTS icon.icns)
