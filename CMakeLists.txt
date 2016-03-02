@@ -67,6 +67,7 @@ if (APPLE)
     add_executable(${OSX_APP_NAME} MACOSX_BUNDLE ${SOURCES})
   endif ()
 
+  target_link_libraries(${APP_NAME} glfw "-framework OpenGL" ${GLFW_LIBRARIES} glew)
   target_link_libraries(${OSX_APP_NAME} glfw "-framework OpenGL" ${GLFW_LIBRARIES} glew)
   set_target_properties(${OSX_APP_NAME} PROPERTIES MACOSX_BUNDLE_ICON_FILE "icon.icns")
 
