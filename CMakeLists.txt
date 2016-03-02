@@ -30,9 +30,6 @@ set(SOURCES
 
 find_package(OpenGL REQUIRED)
 
-# Compiler arguments
-add_definitions(-Wall -std=c++11)
-
 # Compiler macro definitions
 add_definitions(-DLOG_FILE="log.txt"
                 -DSHADER_PATH="../src/shaders/"
@@ -56,6 +53,9 @@ target_link_libraries(glew ${GLFW_LIBRARIES})
 add_definitions(
   -DGLEW_STATIC
 )
+
+# Compiler arguments
+add_definitions(-Wall -std=c++11)
 
 if (APPLE)
   if (EXISTS icon.icns)
