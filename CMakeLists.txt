@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.0)
 project(GraphicsEngine)
 
+if (NOT CMAKE_BUILD_TYPE)
+  message(STATUS "No build type selected, default to Release")
+  set(CMAKE_BUILD_TYPE "Release")
+endif()
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
 set(APP_NAME GraphicsEngine)
 
 set(GLFW_SOURCE_DIR "external/glfw")
