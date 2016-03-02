@@ -1,9 +1,12 @@
 [submodule "external/glfw"]
 	path = external/glfw
 	url = https://github.com/glfw/glfw.git
+	branch = 5dc9d0f5810864c4048abd2cf2b8ae00e0c26470
 [submodule "external/glm"]
 	path = external/glm
 	url = https://github.com/g-truc/glm.git
+	branch = cb71d2376d2300bb7b45fba17862173fb1eacb86
 [submodule "external/glew"]
 	path = external/glew
 	url = https://github.com/nigels-com/glew.git
+	branch = c4bade8726701ae95d9fe22f1e1aeba462dc9f0b
