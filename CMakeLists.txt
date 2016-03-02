@@ -1,61 +1,80 @@
 cmake_minimum_required(VERSION 3.0)
-project(MeshSimplification)
+project(GraphicsEngine)
 
-if (NOT CMAKE_BUILD_TYPE)
-	message(STATUS "No build type selected, default to Release")
-	set(CMAKE_BUILD_TYPE "Release")
-endif()
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+set(APP_NAME GraphicsEngine)
 
-find_package(glfw3 REQUIRED)
-include_directories(${glfw3_INCLUDE_DIRS})
-link_directories(${glfw3_LIBRARY_DIRS})
-add_definitions(${glfw3_DEFINITIONS})
-if(NOT glfw3_FOUND)
-    message(ERROR " glfw3 not found!")
-endif(NOT glfw3_FOUND)
+set(GLFW_SOURCE_DIR "external/glfw")
+set(GLM_SOURCE_DIR "external/glm")
+set(GLEW_SOURCE_DIR "external/glew")
 
-find_package(GLEW REQUIRED)
-include_directories(${GLEW_INCLUDE_DIRS})
-link_directories(${GLEW_LIBRARY_DIRS})
-add_definitions(${GLEW_DEFINITIONS})
-if(NOT GLEW_FOUND)
-    message(ERROR " GLEW not found!")
-endif(NOT GLEW_FOUND)
+# Building only the GLFW lib
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "")
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "")
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "")
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "")
+set(GLFW_INSTALL OFF CACHE BOOL "")
+
+set(SOURCES 
+    src/main.cpp
+    src/Logger.cpp
+    src/Util.cpp
+    src/Window.cpp
+    src/InputHandler.cpp
+    src/RenderPipeline.cpp
+    src/Shader.cpp
+    src/SceneGraph.cpp
+    src/Mesh.cpp
+    src/CoordFrame.cpp
+    src/FlatShader.cpp
+    src/NormalShader.cpp)
 
 find_package(OpenGL REQUIRED)
-include_directories(${OpenGL_INCLUDE_DIRS})
-link_directories(${OpenGL_LIBRARY_DIRS})
-add_definitions(${OpenGL_DEFINITIONS})
-if(NOT OPENGL_FOUND)
-    message(ERROR " OPENGL not found!")
-endif(NOT OPENGL_FOUND)
-
-link_libraries(m glfw3 GLEW GL X11 Xi Xrandr Xxf86vm Xinerama Xcursor dl pthread)
-
-include_directories(include)
 
 # Compiler arguments
 add_definitions(-Wall -std=c++11)
 
 # Compiler macro definitions
 add_definitions(-DLOG_FILE="log.txt"
-				-DSHADER_PATH="../src/shaders/"
-				-DMODEL_PATH="../media/")
+                -DSHADER_PATH="../src/shaders/"
+                -DMODEL_PATH="../media/")
 
-set(SOURCES 
-	src/main.cpp
-	src/Logger.cpp
-	src/Util.cpp
-	src/Window.cpp
-	src/InputHandler.cpp
-	src/RenderPipeline.cpp
-	src/Shader.cpp
-	src/SceneGraph.cpp
-	src/Mesh.cpp
-	src/CoordFrame.cpp
-	src/FlatShader.cpp
-	src/NormalShader.cpp)
+add_subdirectory(${GLFW_SOURCE_DIR} ${GLEW_SOURCE_DIR})
 
-add_executable(program ${SOURCES})
+include_directories(include
+                    ${GLFW_SOURCE_DIR}/include
+                    ${GLFW_SOURCE_DIR}/deps
+                    ${GLM_SOURCE_DIR}
+                    ${GLEW_SOURCE_DIR}/include)
+
+add_library(glew STATIC
+  ${GLEW_SOURCE_DIR}/src/glew.c
+  ${GLEW_SOURCE_DIR}/include
+)
+
+target_link_libraries(glew ${GLFW_LIBRARIES})
+
+add_definitions(
+  -DGLEW_STATIC
+)
+
+add_executable(${APP_NAME} ${SOURCES})
+target_link_libraries(${APP_NAME} ${OPENGL_LIBRARIES} glfw ${GLFW_LIBRARIES} glew)
+
+
+if (APPLE)
+  if (EXISTS icon.icns)
+    add_executable(${APP_NAME} MACOSX_BUNDLE ${SOURCES} icon.icns)
+    set_source_files_properties("icon.icns" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+  else ()
+    add_executable(${APP_NAME} MACOSX_BUNDLE main.cpp)
+  endif ()
+
+  target_link_libraries(${APP_NAME} glfw ${OPENGL_glu_LIBRARY} ${GLFW_LIBRARIES} glew)
+  set_target_properties(${APP_NAME} PROPERTIES MACOSX_BUNDLE_ICON_FILE "icon.icns")
+
+  set_target_properties(${APP_NAME} PROPERTIES MACOSX_BUNDLE_BUNDLE_NAME ${APP_NAME})
+  set_target_properties(${APP_NAME} PROPERTIES MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0")
+  set_target_properties(${APP_NAME} PROPERTIES MACOSX_BUNDLE_LONG_VERSION_STRING "1.0")
+  set_target_properties(${APP_NAME} PROPERTIES MACOSX_BUNDLE_INFO_STRING "OpenGL boilerplate example app")
+endif()
 
