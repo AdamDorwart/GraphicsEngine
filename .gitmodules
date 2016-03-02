@@ -10,3 +10,4 @@
 	path = external/glew
 	url = https://github.com/nigels-com/glew.git
 	branch = c4bade8726701ae95d9fe22f1e1aeba462dc9f0b
+	ignore = dirty
