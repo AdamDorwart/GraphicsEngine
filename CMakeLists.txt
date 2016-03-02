@@ -62,7 +62,7 @@ if (APPLE)
     add_executable(${APP_NAME} MACOSX_BUNDLE ${SOURCES} icon.icns)
     set_source_files_properties("icon.icns" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
   else ()
-    add_executable(${APP_NAME} MACOSX_BUNDLE main.cpp)
+    add_executable(${APP_NAME} MACOSX_BUNDLE ${SOURCES})
   endif ()
 
   target_link_libraries(${APP_NAME} glfw ${OPENGL_glu_LIBRARY} ${GLFW_LIBRARIES} glew)
