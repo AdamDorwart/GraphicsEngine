@@ -56,6 +56,7 @@ add_definitions(
   -DGLEW_STATIC
 )
 
+add_executable(${APP_NAME} ${SOURCES})
 
 if (APPLE)
   if (EXISTS icon.icns)
@@ -73,7 +74,6 @@ if (APPLE)
   set_target_properties(${APP_NAME} PROPERTIES MACOSX_BUNDLE_LONG_VERSION_STRING "1.0")
   set_target_properties(${APP_NAME} PROPERTIES MACOSX_BUNDLE_INFO_STRING "OpenGL boilerplate example app")
 else ()
-  add_executable(${APP_NAME} ${SOURCES})
   target_link_libraries(${APP_NAME} ${OPENGL_LIBRARIES} glfw ${GLFW_LIBRARIES} glew)
 endif()
 
