@@ -46,7 +46,7 @@ void Window::updateFPS() {
 void Window::initGLFW() {
 	if (!isGlfwInit) {
 		// start GL context and O/S window using the GLFW helper library
-		LOG_INFO("starting GLFW %s\n", glfwGetVersionString());
+		LogInfo("starting GLFW %s\n", glfwGetVersionString());
 
 		// Set error callback for GLFW
 	    glfwSetErrorCallback(Window::errorCallback);
@@ -56,7 +56,7 @@ void Window::initGLFW() {
 
 		// Init GLFW
 		if (!glfwInit()) {
-			LOG_ERR("ERROR: could not start GLFW3\n");
+			LogError("ERROR: could not start GLFW3\n");
 	    	exit(EXIT_FAILURE);	
 	    }
 
@@ -77,7 +77,7 @@ void Window::initialize(int width, int height, const char* title) {
     // Create window
     m_glfwWindow = glfwCreateWindow(width, height, title, NULL, NULL);
     if (!m_glfwWindow) {
-    	LOG_ERR("ERROR: could not create window\n");
+    	LogError("ERROR: could not create window\n");
 	    glfwTerminate();
 	    exit(EXIT_FAILURE);
 	}
@@ -89,7 +89,7 @@ void Window::initialize(int width, int height, const char* title) {
     GLenum glewErr = glewInit();
 	if (GLEW_OK != glewErr) {
 		/* Problem: glewInit failed, something is seriously wrong. */
-		LOG_ERR("Error: %s\n", glewGetErrorString(glewErr));
+		LogError("Error: %s\n", glewGetErrorString(glewErr));
 		exit(EXIT_FAILURE);
 	}
 	//Consume the false Invalid enum error caused by GLEW
@@ -143,7 +143,7 @@ void Window::finalizeFrame() {
 }
 
 void Window::errorCallback(int error, const char* description) {
-	LOG_ERR("GLFW ERROR: code %i msg: %s\n", error, description);
+	LogError("GLFW ERROR: code %i msg: %s\n", error, description);
 }
 
 void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {

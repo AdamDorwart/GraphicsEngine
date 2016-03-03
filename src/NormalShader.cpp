@@ -12,27 +12,27 @@ NormalShader::~NormalShader() {
 
 bool NormalShader::init() {
 	if (!Shader::init()) {
-		LOG_ERR("Unable to initialize shader.\n");
+		LogError("Unable to initialize shader.\n");
 		return false;
 	}
 
 	if (!addShader(GL_VERTEX_SHADER, "simple.vs")) {
-		LOG_ERR("Unable to add vertex shader: simple.vs\n");
+		LogError("Unable to add vertex shader: simple.vs\n");
 		return false;
 	}
 
 	if (!addShader(GL_GEOMETRY_SHADER, "simple.gs")) {
-		LOG_ERR("Unable to add geometry shader: simple.gs\n");
+		LogError("Unable to add geometry shader: simple.gs\n");
 		return false;
 	}
 
 	if (!addShader(GL_FRAGMENT_SHADER, "normal.fs")) {
-		LOG_ERR("Unable to add fragment shader: simple.fs\n");
+		LogError("Unable to add fragment shader: simple.fs\n");
 		return false;
 	}
 
 	if (!finalize()) {
-		LOG_ERR("Unable to finalize shader.\n");
+		LogError("Unable to finalize shader.\n");
 		return false;
 	}
 

@@ -41,7 +41,8 @@ find_package(OpenGL REQUIRED)
 # Compiler macro definitions
 add_definitions(-DLOG_FILE="log.txt"
                 -DSHADER_PATH="../src/shaders/"
-                -DMODEL_PATH="../media/")
+                -DMODEL_PATH="../media/"
+                -DTHROW_CONTRACT)
 
 add_subdirectory(${GLFW_SOURCE_DIR} ${GLEW_SOURCE_DIR})
 

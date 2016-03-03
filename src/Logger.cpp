@@ -36,24 +36,6 @@ bool Logger::info(const char* message, ...) {
 	return true;
 }
 
-bool Logger::cond_info(bool cond, const char* message, ...) {
-	if (cond) {
-		va_list argptr;
-		FILE* file = fopen (m_logFile, "a");
-		if (!file) {
-			fprintf(stderr,
-					"ERROR: could not open log file %s file for appending\n",
-					m_logFile);
-			return false;
-		}
-		va_start(argptr, message);
-		vfprintf(file, message, argptr);
-		va_end(argptr);
-		fclose(file);
-	}
-	return true;
-}
-
 bool Logger::err(const char* message, ...) {
 	va_list argptr;
 	FILE* file = fopen (m_logFile, "a");

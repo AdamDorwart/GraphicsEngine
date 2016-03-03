@@ -6,7 +6,7 @@ This repository includes its dependencies `GLFW3`, `GLM`, and `GLEW` as submodul
 If you've already cloned the repository you'll need to initialize the submodules with
 ```
 git submodule init
-git submodule udpate
+git submodule update
 ```
 or you can clone and init with
 ```

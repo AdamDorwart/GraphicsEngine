@@ -49,7 +49,7 @@ IndexType Mesh::pushEdgeCollapse(IndexType v1, IndexType v2, bool updateVbo) {
 	// i.e: v = 1 or 0
 	// Check if these edges are elligible for collapse
 	if (!buffer[v1].v || !buffer[v2].v || v1 >= 2*buffer.size() || v2 >= 2*buffer.size()) {
-		LOG_ERR("Verticies are unelligble for collapse\n");
+		LogError("Verticies are unelligble for collapse\n");
 		return NULL_INDEX;
 	}
 	VSet* v1Adj = &vAdjs[v1];
@@ -202,7 +202,7 @@ void Mesh::initializeQuadricError(float threshold) {
 	vertexQ.reserve(2*buffer.size());
 	vpeLinks.resize(2*buffer.size());
 
-	//LOG_INFO("Calculating face errors\n");
+	//LogInfo("Calculating face errors\n");
 	// Find the fundamental error quadric of every face
 	for (IndexType i = 0; i < faces.size(); i++) {
 		Triangle& t = faces[i];
@@ -215,10 +215,10 @@ void Mesh::initializeQuadricError(float threshold) {
 		mat4 K = outerProduct(p, p);
 
 		faceK.push_back(K);
-		//LOG_INFO("Facek[%d]= %s\n",i,to_string(K).c_str());
+		//LogInfo("Facek[%d]= %s\n",i,to_string(K).c_str());
 	}
 
-	//LOG_INFO("Computing Vertex Q's\n");
+	//LogInfo("Computing Vertex Q's\n");
 	// Compute initial Q for each vertex
 	for (IndexType i = 0; i < vAdjs.size(); i++) {
 		VSet& adjFaces = vAdjs[i];
@@ -227,10 +227,10 @@ void Mesh::initializeQuadricError(float threshold) {
 			Q = Q + faceK[face];
 		}
 		vertexQ.push_back(Q);
-		//LOG_INFO("VertexQ[%d]= %s\n",i,to_string(Q).c_str());
+		//LogInfo("VertexQ[%d]= %s\n",i,to_string(Q).c_str());
 	}
 
-	//LOG_INFO("Finding all valid pairs.\n");
+	//LogInfo("Finding all valid pairs.\n");
 	// Find all Valid Pairs
 	using ValidPairs = std::set<IndexType>;
 	// Combine hashes into a new unique hash - Thanks Boost
@@ -247,7 +247,7 @@ void Mesh::initializeQuadricError(float threshold) {
 	std::unordered_set<ValidPairs, ValidPairsHasher> vp;
 	for (IndexType i = 0; i < vAdjs.size(); i++) {
 		VSet& adjFaces = vAdjs[i];
-		//LOG_INFO("Finding edge pairs for %d\n",i);
+		//LogInfo("Finding edge pairs for %d\n",i);
 		// Add valid pairs that share an existing edge
 		for (IndexType face_i : adjFaces) {
 			for (auto pair_i : faces[face_i].v) {
@@ -264,13 +264,13 @@ void Mesh::initializeQuadricError(float threshold) {
 						for (auto vertex : *(result.first)) {
 							v[i++] = vertex;
 						}
-						LOG_INFO("New VP: (%d,%d)\n", v[0], v[1]);
+						LogInfo("New VP: (%d,%d)\n", v[0], v[1]);
 					}
 					*/
 				}
 			}
 		}
-		//LOG_INFO("Finding distance pairs for %d\n",i);
+		//LogInfo("Finding distance pairs for %d\n",i);
 		// Add valid pairs of vertices that are within threshold distance
 		// to each other
 		// Iterate through every other vertex
@@ -291,7 +291,7 @@ void Mesh::initializeQuadricError(float threshold) {
 						for (auto vertex : *(result.first)) {
 							v[i++] = vertex;
 						}
-						//LOG_INFO("New VP: (%d,%d)\n", v[0], v[1]);
+						//LogInfo("New VP: (%d,%d)\n", v[0], v[1]);
 					}
 				}
 			}
@@ -299,7 +299,7 @@ void Mesh::initializeQuadricError(float threshold) {
 		*/
 	}
 
-	//LOG_INFO("Starting VPE creation.\n");
+	//LogInfo("Starting VPE creation.\n");
 	// Compute quadric errors for contractrions and add to heap
 	for (auto pair : vp) {
 		int i = 0;
@@ -327,44 +327,44 @@ VPEheap::iterator Mesh::insertVPE(IndexType v0, IndexType v1) {
 	vpe.v[0] = v0;
 	vpe.v[1] = v1;
 
-	//LOG_INFO("Adding VPE: (%d,%d,%f)\n",vpe.v[0], vpe.v[1], vpe.error);
+	//LogInfo("Adding VPE: (%d,%d,%f)\n",vpe.v[0], vpe.v[1], vpe.error);
 
 	// Insert the Valid Pair Error into the heap
 	auto insertResult = vertexErrors.insert(vpe);
 	if (!insertResult.second) {
-		//LOG_INFO("Duplicate VPE insert (%d,%d)\n",v0, v1);
+		//LogInfo("Duplicate VPE insert (%d,%d)\n",v0, v1);
 	}
 	return insertResult.first;
 }
 
 void Mesh::printVPElinks(bool showV) {
-	LOG_INFO("VPElinks state:\n");
+	LogInfo("VPElinks state:\n");
 	for (IndexType i = 0; i < vpeLinks.size(); i++) {
 		if (vpeLinks[i].size() == 0) {
 			continue;
 		}
-		LOG_INFO("vpeLinks[%d] = {",i);
+		LogInfo("vpeLinks[%d] = {",i);
 		for (auto adjV : vpeLinks[i]) {
 			if (showV) {
-				LOG_INFO("{%d,%d,%d}",adjV->v[0],adjV->v[1],adjV);
+				LogInfo("{%d,%d,%d}",adjV->v[0],adjV->v[1],adjV);
 			} else {
-				LOG_INFO("{%d}",adjV);
+				LogInfo("{%d}",adjV);
 			}
 		}
-		LOG_INFO("}\n");
+		LogInfo("}\n");
 	}
 }
 
 void Mesh::printVPE(bool showError) {
-	LOG_INFO("VPE :{");
+	LogInfo("VPE :{");
 	for (auto pair : vertexErrors) {
 		if (showError) {
-			LOG_INFO("{%d,%d,e=%f}",pair.v[0],pair.v[1],pair.error);
+			LogInfo("{%d,%d,e=%f}",pair.v[0],pair.v[1],pair.error);
 		} else {
-			LOG_INFO("{%d,%d}",pair.v[0],pair.v[1]);
+			LogInfo("{%d,%d}",pair.v[0],pair.v[1]);
 		}
 	}
-	LOG_INFO("}\n");
+	LogInfo("}\n");
 }
 
 void Mesh::quadricSimplifyStep(bool updateVbo) {
@@ -382,12 +382,12 @@ void Mesh::quadricSimplifyStep(bool updateVbo) {
 	// Collapse the edge
 	IndexType newV = pushEdgeCollapse(it->v[0], it->v[1], updateVbo);
 	if (newV == NULL_INDEX) {
-		LOG_ERR("Unable to collapse verticies (%d,%d)\n", it->v[0], it->v[1]);
+		LogError("Unable to collapse verticies (%d,%d)\n", it->v[0], it->v[1]);
 		return;
 	}
 
 	// Add new Q error
-	//LOG_INFO("Collapsing edge (%d,%d,err=%f->(%d)\n", it->v[0], it->v[1], it->error, newV);
+	//LogInfo("Collapsing edge (%d,%d,err=%f->(%d)\n", it->v[0], it->v[1], it->error, newV);
 	vertexQ.push_back(vertexQ[it->v[0]] + vertexQ[it->v[1]]);
 
 	std::vector<std::pair<IndexType,VPEheap::iterator>> toRemove;
@@ -438,7 +438,7 @@ void Mesh::quadricSimplifyStep(bool updateVbo) {
 		auto result = vpeLinks[vpeLinkRm.first].erase(vpeLinkRm.second);
 		if (result) {
 			//printVPElinks(true);
-			//LOG_INFO("Removing vpeLink[%d]: (%d,%d,%d)\n",vpeLinkRm.first,vpeLinkRm.second->v[0],vpeLinkRm.second->v[1],vpeLinkRm.second);
+			//LogInfo("Removing vpeLink[%d]: (%d,%d,%d)\n",vpeLinkRm.first,vpeLinkRm.second->v[0],vpeLinkRm.second->v[1],vpeLinkRm.second);
 		}
 	}
 	// Add the new ones
@@ -446,12 +446,12 @@ void Mesh::quadricSimplifyStep(bool updateVbo) {
 		auto result = vpeLinks[vpeLinkAdd.first].insert(vpeLinkAdd.second);
 		if (result.second) {
 			//printVPElinks(true);
-			//LOG_INFO("Adding vpeLink[%d]: (%d,%d,%d)\n",vpeLinkAdd.first,vpeLinkAdd.second->v[0],vpeLinkAdd.second->v[1],vpeLinkAdd.second);
+			//LogInfo("Adding vpeLink[%d]: (%d,%d,%d)\n",vpeLinkAdd.first,vpeLinkAdd.second->v[0],vpeLinkAdd.second->v[1],vpeLinkAdd.second);
 		}
 	}
 
 	// Remove the collapsed pair
-	//LOG_INFO("Removing main VPE: (%d,%d,%f)\n",it->v[0], it->v[1], it->error);
+	//LogInfo("Removing main VPE: (%d,%d,%f)\n",it->v[0], it->v[1], it->error);
 	vertexErrors.erase(it);
 }
 
@@ -557,7 +557,7 @@ bool Mesh::parseOFF(const char* filename) {
 	xmax = ymax = zmax = std::numeric_limits<double>::min();
 
 	if (!infile.is_open() || infile.bad() || !infile.good() || infile.fail()) {
-		LOG_ERR("Error opening file [%s]\n", (std::string(MODEL_PATH) + filename).c_str());
+		LogError("Error opening file [%s]\n", (std::string(MODEL_PATH) + filename).c_str());
 		return false;
 	}
 
@@ -570,7 +570,7 @@ bool Mesh::parseOFF(const char* filename) {
 	// Check if header string is valid
 	std::getline(infile, line);
 	if (line.find("OFF") == std::string::npos) {
-		LOG_ERR("%s: file does not follow the OFF specification\n", filename);
+		LogError("%s: file does not follow the OFF specification\n", filename);
 		return false;
 	}
 
@@ -623,7 +623,7 @@ bool Mesh::parseOFF(const char* filename) {
 		} else if (tokens.size() == 4) {
 			// Reading face
 			if (tokens.at(0).compare("3") != 0) {
-				LOG_ERR("Error parsing %s: file format uses non-triangle faces (%s)\n", filename, line.c_str());
+				LogError("Error parsing %s: file format uses non-triangle faces (%s)\n", filename, line.c_str());
 				return false;
 			}
 			IndexType v0 = std::stoi(tokens.at(1));
@@ -697,20 +697,20 @@ bool Mesh::parseOFF(const char* filename) {
 
 #ifndef NDEBUG
 	for (IndexType i = 0; i < faces.size(); i++) {
-		LOG_INFO("faces[%d]: {%d,%d,%d}{%d,%d,%d}\n",i,faces[i].v[0],
+		LogInfo("faces[%d]: {%d,%d,%d}{%d,%d,%d}\n",i,faces[i].v[0],
 			faces[i].v[1],faces[i].v[2],faces[i].f[0],faces[i].f[1],faces[i].f[2]);
 	}
 
 	for (IndexType i = 0; i < vAdjs.size(); i++) {
-		LOG_INFO("vAdjs[%d]:{",i);
+		LogInfo("vAdjs[%d]:{",i);
 		for (auto face : vAdjs[i]) {
-			LOG_INFO("%d,",face);
+			LogInfo("%d,",face);
 		}
-		LOG_INFO("}\n");
+		LogInfo("}\n");
 	}
 #endif
 
-	LOG_INFO("Num of faces: %d\n", faces.size());
+	LogInfo("Num of faces: %d\n", faces.size());
 
     setupBuffers();
     createVertexNormals();

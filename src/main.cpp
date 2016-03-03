@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Logger.h"
+#include "Contract.h"
 #include "Window.h"
 #include "InputHandler.h"
 #include "RenderPipeline.h"
@@ -20,22 +21,22 @@ void handleGLerror() {
 	while((err = glGetError()) != GL_NO_ERROR) {
 		switch (err) {
 			case GL_INVALID_ENUM:
-				LOG_ERR("GL error: Invalid enum \n");
+				LogError("GL error: Invalid enum \n");
 				break;
 			case GL_INVALID_VALUE:
-				LOG_ERR("GL error: Invalid value\n");
+				LogError("GL error: Invalid value\n");
 				break;
 			case GL_INVALID_OPERATION:
-				LOG_ERR("GL error: Invalid operation\n");
+				LogError("GL error: Invalid operation\n");
 				break;
 			case GL_INVALID_FRAMEBUFFER_OPERATION:
-				LOG_ERR("GL error: Invalid framebuffer operation\n");
+				LogError("GL error: Invalid framebuffer operation\n");
 				break;
 			case GL_OUT_OF_MEMORY:
-				LOG_ERR("GL error: Out of memory\n");
+				LogError("GL error: Out of memory\n");
 				break;
 			default:
-				LOG_ERR("GL error: Unknown");
+				LogError("GL error: Unknown");
 		}
 		error = true;
 	}
@@ -46,16 +47,11 @@ void handleGLerror() {
 
 
 int main(int argc, char *argv[]) {
-	assert(Logger::start());
-	if (argc != 2) {
-		LOG_ERR("Error: No mesh file provided.\n");
-		exit(EXIT_FAILURE);
-	}
+	Expects(Logger::start());
+	ExpectsMsg(argc == 2, "Error: No mesh file provided.\n");
 
-	int width = 1280;
-	int height = 720;
-	//int width = 2560;
-	//int height = 1440;
+	int width = 2560;
+	int height = 1440;
 
 	// Setup Window
 	Window window = Window(width, height, "Mesh Simplification");
@@ -73,19 +69,15 @@ int main(int argc, char *argv[]) {
 
 	// Setup mesh
 	Mesh* meshA = new Mesh();
-	if (!meshA->parseOFF(argv[1])) {
-		LOG_ERR("Error: Unable to continue without mesh.\n");
-		exit(EXIT_FAILURE);
-	}
+	ExpectsMsg(meshA->parseOFF(argv[1]),
+			   "Error: Unable to continue without mesh.\n");
 	inputHandler->selectedMesh = meshA;
 	//meshA->pushEdgeCollapse(0,1);
 
 	Mesh* meshB = new Mesh();
 	//meshB.edgeCollapse(11,23);
-	if (!meshB->parseOFF(argv[1])) {
-		LOG_ERR("Error: Unable to continue without mesh.\n");
-		exit(EXIT_FAILURE);
-	}
+	ExpectsMsg(meshB->parseOFF(argv[1]),
+			   "Error: Unable to continue without mesh.\n");
 	//meshB->pushEdgeCollapse(0,1);
 	//meshB->popEdgeCollapse();
 

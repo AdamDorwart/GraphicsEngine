@@ -30,6 +30,7 @@ bool RenderPipeline::init() {
 void RenderPipeline::render(vec2 dim, SceneGraph* scene) {
 	m_coordFrame->setViewport(0, 0, dim.x, dim.y);
 
+
 	if (m_useFlatShading) {
 		m_flatShader->enable();
 	} else {
