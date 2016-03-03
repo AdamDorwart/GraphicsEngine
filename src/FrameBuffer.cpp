@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include "FrameBuffer.h"
 #include "Logger.h"
 
@@ -24,7 +25,7 @@ FrameBuffer::~FrameBuffer() {
 }
 
 bool FrameBuffer::init(unsigned int width, unsigned int height, bool depth, GLenum internalType) {
-	m_internalType = type;
+	m_internalType = internalType;
 	m_width = width;
 	m_height = height;
 
@@ -81,7 +82,7 @@ bool FrameBuffer::init(unsigned int width, unsigned int height, bool depth, GLen
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
 	if (status != GL_FRAMEBUFFER_COMPLETE) {
-		LogErr("FB error, status: 0x%x\n", status);
+		LogError("FB error, status: 0x%x\n", status);
 		return false;
 	}
 
@@ -112,9 +113,9 @@ void FrameBuffer::bindForReading(GLenum textureUnit) {
 
 
 unsigned int FrameBuffer::getWidth() {
-	return width;
+	return m_width;
 }
 
 unsigned int FrameBuffer::getHeight() {
-	return height;
+	return m_height;
 }

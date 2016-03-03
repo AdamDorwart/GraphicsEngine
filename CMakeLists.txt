@@ -34,7 +34,9 @@ set(SOURCES
     src/Mesh.cpp
     src/CoordFrame.cpp
     src/FlatShader.cpp
-    src/NormalShader.cpp)
+    src/NormalShader.cpp
+    src/Texture.cpp
+    src/FrameBuffer.cpp)
 
 find_package(OpenGL REQUIRED)
 
