@@ -10,8 +10,8 @@ RenderPipeline::RenderPipeline() {
 RenderPipeline::~RenderPipeline() {
 	delete m_flatShader;
 	delete m_normalShader;
-	delete m_coordFrame;
 	m_coordFrame->unsubscribe(this);
+	delete m_coordFrame;
 }
 
 bool RenderPipeline::init() {

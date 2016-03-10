@@ -5,19 +5,21 @@
 
 using namespace glm;
 
-class FlatShader : public Shader, public CoordFrameListener {
+class LightShader : public Shader, public CoordFrameListener {
 	public:
-		FlatShader();
-		virtual ~FlatShader();
+		LightShader();
+		virtual ~LightShader();
 
 		virtual bool init();
 
 		void setWVP(mat4 wvp);
+		void setDepthWVP(mat4 depthMVP);
 		void setW(mat4 w);
 
 		virtual void consume(CoordFrame* frame);
 	private:
 
+		GLint m_DepthWVPLocation;
 		GLint m_WVPLocation;
 		GLint m_WorldLocation;
 };

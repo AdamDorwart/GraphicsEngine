@@ -16,17 +16,17 @@ bool NormalShader::init() {
 		return false;
 	}
 
-	if (!addShader(GL_VERTEX_SHADER, "simple.vs")) {
+	if (!addShader(GL_VERTEX_SHADER, "vs/simple.vs")) {
 		LogError("Unable to add vertex shader: simple.vs\n");
 		return false;
 	}
 
-	if (!addShader(GL_GEOMETRY_SHADER, "simple.gs")) {
+	if (!addShader(GL_GEOMETRY_SHADER, "gs/simple.gs")) {
 		LogError("Unable to add geometry shader: simple.gs\n");
 		return false;
 	}
 
-	if (!addShader(GL_FRAGMENT_SHADER, "normal.fs")) {
+	if (!addShader(GL_FRAGMENT_SHADER, "fs/normal.fs")) {
 		LogError("Unable to add fragment shader: simple.fs\n");
 		return false;
 	}
@@ -49,4 +49,10 @@ void NormalShader::setWVP(mat4 WVP) {
 
 void NormalShader::setW(mat4 W) {
 	glUniformMatrix4fv(m_WorldLocation, 1, GL_FALSE, value_ptr(W));
+}
+
+
+void NormalShader::consume(CoordFrame* frame) {
+	setWVP(frame->getPCW());
+	setW(frame->getW());
 }

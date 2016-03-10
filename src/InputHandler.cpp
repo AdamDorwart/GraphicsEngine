@@ -97,6 +97,7 @@ void InputHandler::consumeKey(Window* window, int key, int scancode, int action,
 					*selectedObject = translate(*selectedObject, vec3(-0.5, 0, 0));
 				}
 				break;
+		/*
 			case GLFW_KEY_Q:
 				if (selectedMesh != NULL) {
 					selectedMesh->quadricSimplifyStep();
@@ -122,10 +123,12 @@ void InputHandler::consumeKey(Window* window, int key, int scancode, int action,
 					}
 				}
 				break;
+				*/
 		}
 	}
 	if (action == GLFW_REPEAT) {
 		switch (key) {
+			/*
 			case GLFW_KEY_Q:
 				if (selectedMesh != NULL) {
 					selectedMesh->quadricSimplifyStep();
@@ -152,6 +155,7 @@ void InputHandler::consumeKey(Window* window, int key, int scancode, int action,
 					selectedMesh->updateVBO();
 				}
 				break;
+			*/
 			case GLFW_KEY_UP:
 				if (selectedObject != NULL) {
 					*selectedObject = translate(*selectedObject, vec3(0, 0.5, 0));

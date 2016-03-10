@@ -23,26 +23,37 @@ set(GLFW_INSTALL OFF CACHE BOOL "")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(SOURCES 
-    src/main.cpp
+    src/test.cpp
+    src/InputHandler.cpp
+
     src/Logger.cpp
     src/Util.cpp
     src/Window.cpp
-    src/InputHandler.cpp
-    src/RenderPipeline.cpp
-    src/Shader.cpp
+    
     src/SceneGraph.cpp
-    src/Mesh.cpp
     src/CoordFrame.cpp
-    src/FlatShader.cpp
-    src/NormalShader.cpp
     src/Texture.cpp
-    src/FrameBuffer.cpp)
+    src/FrameBuffer.cpp
+
+    src/RenderPipeline.cpp
+    src/ShadowPipeline.cpp
+
+    src/Mesh/Mesh.cpp
+    src/Mesh/MeshSimplifier.cpp
+    src/Mesh/ParseOFFMesh.cpp
+    src/Mesh/ParseOBJMesh.cpp
+
+    src/Shader/Shader.cpp
+    src/Shader/FlatShader.cpp
+    src/Shader/NormalShader.cpp
+    src/Shader/ShadowShader.cpp
+    src/Shader/LightShader.cpp)
 
 find_package(OpenGL REQUIRED)
 
 # Compiler macro definitions
 add_definitions(-DLOG_FILE="log.txt"
-                -DSHADER_PATH="../src/shaders/"
+                -DSHADER_PATH="../src/Shader/"
                 -DMODEL_PATH="../media/"
                 -DTHROW_CONTRACT)
 

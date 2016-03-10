@@ -4,6 +4,7 @@
 CoordFrame::CoordFrame() {
 	// Add identity matrix
 	w.push_back(mat4(1.0f));
+	fov = 0;
 }
 
 
@@ -33,7 +34,7 @@ mat4 CoordFrame::getW() {
 
 void CoordFrame::setViewport(float xmin, float xmax, float ymin, float ymax) {
 	d = vec4(xmin, ymin, xmax, ymax);
-	if (xmax != 0 && ymax != 0) {
+	if (xmax != 0 && ymax != 0 && fov != 0) {
 		setPerspective(fov, xmax, ymax, nearFace, farFace);
 	}
 }
@@ -45,8 +46,14 @@ void CoordFrame::setPerspective(float _fov, float _width, float _height, float _
 	p = perspectiveFov(_fov, _width, _height, _nearFace, _farFace);
 }
 
-void CoordFrame::setCamera(vec3& e, vec3& d, vec3& up) {
-	c = lookAt(e, d, up);
+void CoordFrame::setOrtho(float _left, float _right, float _bottom, float _top, float _nearFace, float _farFace) {
+	nearFace = _nearFace;
+	farFace = _farFace;
+	p = ortho(_left, _right, _bottom, _top, _nearFace, _farFace);
+}
+
+void CoordFrame::setCamera(vec3& e, vec3& center, vec3& up) {
+	c = lookAt(e, center, up);
 }
 
 mat4 CoordFrame::getCamera() {

@@ -37,7 +37,8 @@ class CoordFrame {
 
 		void setViewport(float xmin, float xmax, float ymin, float ymax);
 		void setPerspective(float fov, float width, float height, float nearFace, float farFace);
-		void setCamera(vec3& e, vec3& d, vec3& up);
+		void setOrtho(float left, float right, float bottom, float top, float nearFace, float farFace);
+		void setCamera(vec3& e, vec3& center, vec3& up);
 		mat4 getCamera();
 		vec4 getViewport();
 		mat4 getPerspective();

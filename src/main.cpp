@@ -64,27 +64,21 @@ int main(int argc, char *argv[]) {
 	// Setup Render Pipeline
 	RenderPipeline pipeline;
 	pipeline.init();
+	//pipeline.addDirLight(vec3(3,3,0));
 
 	SceneGraph* scene = new SceneGraph();
 
 	// Setup mesh
 	Mesh* meshA = new Mesh();
-	ExpectsMsg(meshA->parseOFF(argv[1]),
+	ExpectsMsg(meshA->parseFile(argv[1]),
 			   "Error: Unable to continue without mesh.\n");
 	inputHandler->selectedMesh = meshA;
-	//meshA->pushEdgeCollapse(0,1);
-
-	Mesh* meshB = new Mesh();
-	//meshB.edgeCollapse(11,23);
-	ExpectsMsg(meshB->parseOFF(argv[1]),
-			   "Error: Unable to continue without mesh.\n");
-	//meshB->pushEdgeCollapse(0,1);
-	//meshB->popEdgeCollapse();
+	//mat4* meshRef = meshA->getRefFrame();
+	//*meshRef = rotate(*meshRef, -1.56f, vec3(1,0,0));
 
 	SceneNode* transform = new SceneNode();
 
 	transform->addChild(meshA);
-	transform->addChild(meshB);
 
 	scene->addChild(transform);
 	mat4* refFrame = inputHandler->selectedObject = transform->getRefFrame();
@@ -94,34 +88,24 @@ int main(int argc, char *argv[]) {
 
 	// 1.0472 rad = 60 deg FOV
 	double fov = 1.0472;
-	double nearPlane = 0.001;
+	double nearPlane = 0.1;
 	double farPlane = 1000.0;
 	double distanceY = meshA->getMaxHeight() / (2.0*tan(0.5*fov));
 	double distanceX = meshA->getMaxWidth() / (2.0*tan(0.5*fov));
 	double distance = (distanceY < distanceX) ? distanceY : distanceX;
-	*refFrame = translate(*refFrame, -meshA->getCenter());
 	frame->setPerspective(fov, width, height, nearPlane, farPlane);
-	vec3 c = vec3(0, 0, -distance);
-	vec3 d = vec3(0, 0, 1);
+	/*
+	vec3 d = vec3(2, -1, 0);
+	vec3 c = vec3(2, 0, 1);
 	vec3 up = vec3(0, 1, 0);
-	frame->setCamera(c, d, up);
+	*/
+	vec3 d = vec3(0, 0, 5);
+	vec3 c = vec3(0, 0, 0);
+	vec3 up = vec3(0, 1, 0);
+	frame->setCamera(d, c, up);
 
 	// Run until user closes the window
 	while (window.isActive()) {
-
-		if (inputHandler->renderMeshA) {
-  			meshA->setVisible(true);
-  			meshB->setVisible(false);
-  		} else {
-  			meshA->setVisible(false);
-  			meshB->setVisible(true);
-  		}
-
-  		if (inputHandler->flatShading) {
-  			pipeline.setFlatShading(true);
-  		} else { 
-  			pipeline.setFlatShading(false);
-  		}
 
   		// Render next frame
     	vec2 dim = window.initFrame();
