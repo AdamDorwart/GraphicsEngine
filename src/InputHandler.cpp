@@ -3,15 +3,30 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <cmath>
 
-InputHandler::InputHandler(int _width, int _height) {
+InputHandler::InputHandler(int _width, int _height, float _initialFov) {
 	renderMeshA = true;
 	leftMousePressed = false;
 	flatShading = true;
 	selectedObject = NULL;
+	toggleMesh = true;
 	lastMX = lastMY = 0;
 	width = _width;
 	height = _height;
 	selectedMesh = NULL;
+	lastTime = glfwGetTime();
+	deltaTime = 0;
+	initialFoV = _initialFov;
+	FoV = _initialFov;
+	position = vec3(0,0,0);
+	direction = vec3(0,0,1);
+	up = vec3(0,1,0);
+	right = vec3(1,0,0);
+	
+	speed = 5.0;
+	// horizontal angle : toward -Z
+	horizontalAngle = 3.14f;
+	// vertical angle : 0, look at the horizon
+	verticalAngle = 0.0f;
 }
 
 InputHandler::~InputHandler() {
@@ -77,103 +92,67 @@ void InputHandler::consumeKey(Window* window, int key, int scancode, int action,
 			case GLFW_KEY_R:
 				*selectedObject = mat4(1.0);
 				break;
-			case GLFW_KEY_UP:
-				if (selectedObject != NULL) {
-					*selectedObject = translate(*selectedObject, vec3(0, 0.5, 0));
-				}
-				break;
-			case GLFW_KEY_DOWN:
-				if (selectedObject != NULL) {
-					*selectedObject = translate(*selectedObject, vec3(0, -0.5, 0));
-				}
-				break;
-			case GLFW_KEY_LEFT:
-				if (selectedObject != NULL) {
-					*selectedObject = translate(*selectedObject, vec3(0.5, 0, 0));
-				}
-				break;
-			case GLFW_KEY_RIGHT:
-				if (selectedObject != NULL) {
-					*selectedObject = translate(*selectedObject, vec3(-0.5, 0, 0));
-				}
-				break;
-		/*
-			case GLFW_KEY_Q:
-				if (selectedMesh != NULL) {
-					selectedMesh->quadricSimplifyStep();
-				}
-				break;
-			case GLFW_KEY_P:
-				if (selectedMesh != NULL) {
-					selectedMesh->popEdgeCollapse();
-				}
+			case GLFW_KEY_T:
+				toggleMesh = !toggleMesh;
 				break;
 			case GLFW_KEY_W:
-				if (selectedMesh != NULL) {
-					for (int i = 0; i < 300; i++) {
-						selectedMesh->quadricSimplifyStep(false);
-					}
-					selectedMesh->updateVBO();
+				if (toggleMesh) {
+					position += direction*deltaTime*speed;
+				} else if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(0,speed*deltaTime,0));
 				}
 				break;
-			case GLFW_KEY_O:
-				if (selectedMesh != NULL) {
-					for (int i = 0; i < 300; i++) {
-						selectedMesh->popEdgeCollapse();
-					}
+			case GLFW_KEY_S:
+				if (toggleMesh) {
+					position += -direction*deltaTime*speed;
+				} else if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(0,-deltaTime*speed,0));
 				}
 				break;
-				*/
+			case GLFW_KEY_A:
+				if (toggleMesh) {
+					position += -right*deltaTime*speed;
+				} else if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(-deltaTime*speed,0,0));
+				}
+				break;
+			case GLFW_KEY_D:
+				if (toggleMesh) {
+					position += right*deltaTime*speed;
+				} else if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(deltaTime*speed,0,0));
+				}
+				break;
 		}
 	}
 	if (action == GLFW_REPEAT) {
 		switch (key) {
-			/*
-			case GLFW_KEY_Q:
-				if (selectedMesh != NULL) {
-					selectedMesh->quadricSimplifyStep();
-				}
-				break;
-			case GLFW_KEY_P:
-				if (selectedMesh != NULL) {
-					selectedMesh->popEdgeCollapse();
-				}
-				break;
 			case GLFW_KEY_W:
-				if (selectedMesh != NULL) {
-					for (int i = 0; i < 500; i++) {
-						selectedMesh->quadricSimplifyStep(false);
-					}
-					selectedMesh->updateVBO();
+				if (toggleMesh) {
+					position += direction*deltaTime*speed;
+				} else if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(0,speed*deltaTime,0));
 				}
 				break;
-			case GLFW_KEY_O:
-				if (selectedMesh != NULL) {
-					for (int i = 0; i < 500; i++) {
-						selectedMesh->popEdgeCollapse(false);
-					}
-					selectedMesh->updateVBO();
+			case GLFW_KEY_S:
+				if (toggleMesh) {
+					position += -direction*deltaTime*speed;
+				} else if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(0,-deltaTime*speed,0));
 				}
 				break;
-			*/
-			case GLFW_KEY_UP:
-				if (selectedObject != NULL) {
-					*selectedObject = translate(*selectedObject, vec3(0, 0.5, 0));
+			case GLFW_KEY_A:
+				if (toggleMesh) {
+					position += -right*deltaTime*speed;
+				} else if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(-deltaTime*speed,0,0));
 				}
 				break;
-			case GLFW_KEY_DOWN:
-				if (selectedObject != NULL) {
-					*selectedObject = translate(*selectedObject, vec3(0, -0.5, 0));
-				}
-				break;
-			case GLFW_KEY_LEFT:
-				if (selectedObject != NULL) {
-					*selectedObject = translate(*selectedObject, vec3(0.5, 0, 0));
-				}
-				break;
-			case GLFW_KEY_RIGHT:
-				if (selectedObject != NULL) {
-					*selectedObject = translate(*selectedObject, vec3(-0.5, 0, 0));
+			case GLFW_KEY_D:
+				if (toggleMesh) {
+					position += right*deltaTime*speed;
+				} else if (selectedObject != NULL) {
+					*selectedObject = translate(*selectedObject, vec3(deltaTime*speed,0,0));
 				}
 				break;
 		}
@@ -189,34 +168,57 @@ void InputHandler::consumeMouseBtn(Window* window, int button, int action, int m
 }
 
 void InputHandler::consumeMousePos(Window* window, double xpos, double ypos) {
-	vec3 v, w, axis;
-	float dv, dw, angle;
-	if (leftMousePressed) {
-		v = vec3((2.0*xpos - (float)(width)) / (float)(width), ((float)(height)-2.0*ypos) / (float)(height), 0);
-		dv = length(v);
-		dv = (dv < 1.0) ? dv : 1.0;
-		v[2] = sqrtf(1.001 - dv*dv);
-		v = normalize(v);
+	if (toggleMesh) {
+		float mouseSpeed = 0.05f;
 
-		w = vec3((2.0*lastMX - (float)(width)) / (float)(width), ((float)(height)-2.0*lastMY) / (float)(height), 0);
-		dw = length(w);
-		dw = (dw < 1.0) ? dw : 1.0;
-		w[2] = sqrtf(1.001 - dw*dw);
-		w = normalize(w);
+		window->setMousePos(width/2, height/2);
 
-		axis = cross(v, w);
-		axis = normalize(axis);
-		angle = acos(dot(v, w) / (length(v)*length(w)));
+		horizontalAngle += mouseSpeed * deltaTime * float(width/2 - xpos );
+		verticalAngle   += mouseSpeed * deltaTime * float(height/2 - ypos );
 
-		if (axis[0] != 0 && axis[1] != 0 && axis[2] != 0 && std::isfinite(angle)) {
-			*selectedObject = rotate(*selectedObject, angle, axis);
+		direction = vec3(
+			cos(verticalAngle) * sin(horizontalAngle),
+			sin(verticalAngle),
+			cos(verticalAngle) * cos(horizontalAngle)
+		);
+
+		 // Right vector
+		right = vec3(
+		    sin(horizontalAngle - 3.14f/2.0f),
+		    0,
+		    cos(horizontalAngle - 3.14f/2.0f)
+		);
+
+		up = cross(right, direction);
+	} else {
+		vec3 v, w, axis;
+		float dv, dw, angle;
+		if (leftMousePressed) {
+			v = vec3((2.0*xpos - (float)(width)) / (float)(width), ((float)(height)-2.0*ypos) / (float)(height), 0);
+			dv = length(v);
+			dv = (dv < 1.0) ? dv : 1.0;
+			v[2] = sqrtf(1.001 - dv*dv);
+			v = normalize(v);
+
+			w = vec3((2.0*lastMX - (float)(width)) / (float)(width), ((float)(height)-2.0*lastMY) / (float)(height), 0);
+			dw = length(w);
+			dw = (dw < 1.0) ? dw : 1.0;
+			w[2] = sqrtf(1.001 - dw*dw);
+			w = normalize(w);
+
+			axis = cross(v, w);
+			axis = normalize(axis);
+			angle = acos(dot(v, w) / (length(v)*length(w)));
+
+			if (axis[0] != 0 && axis[1] != 0 && axis[2] != 0 && std::isfinite(angle)) {
+				*selectedObject = rotate(*selectedObject, angle, axis);
+			}
 		}
+		lastMX = xpos;
+		lastMY = ypos;
 	}
-	lastMX = xpos;
-	lastMY = ypos;
 }
 
 void InputHandler::consumeMouseScroll(Window* window, double xoffset, double yoffset) {
-	double scale = 0.5;
-	*selectedObject = translate(*selectedObject, vec3(0, 0, yoffset*scale));
+	FoV = initialFoV - .005*yoffset;
 }

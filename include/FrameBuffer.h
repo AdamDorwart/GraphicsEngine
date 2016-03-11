@@ -11,7 +11,6 @@ class FrameBuffer
 		~FrameBuffer();
 
 		bool init(unsigned int width, unsigned int height, GLenum depthType, GLenum colorType);
-		bool initDepth();
 		
 		void unbind();
 		void bindForWriting();

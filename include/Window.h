@@ -35,6 +35,9 @@ class Window {
 		void subscribe(EventType event, InputListener* listener);
 		void unsubscribe(EventType event, InputListener* listener);
 
+		void setMousePos(double xpos, double ypos);
+		void setInputMode(int mode, int value);
+		
 	private:
 		void updateFPS();
 

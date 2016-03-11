@@ -45,7 +45,6 @@ void handleGLerror() {
 	}
 }
 
-
 int main(int argc, char *argv[]) {
 	Expects(Logger::start());
 	ExpectsMsg(argc == 2, "Error: No mesh file provided.\n");

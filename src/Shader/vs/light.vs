@@ -9,16 +9,20 @@ uniform mat4 gWVP;
 uniform mat4 gDepthWVP;
 uniform mat4 gWorld;
 
-out vec3 NormalFS;
-out vec3 WorldPos;
-out vec3 ShadowCoord;
-out vec2 TexCoordFS;
+out VS_OUT {
+    vec3 WorldPos;
+    vec3 Normal;
+    vec2 TexCoord;
+    vec3 Color;
+    vec4 ShadowCoord;
+} vs_out;
 
 void main () {
 	//Visible = Visible;
-	TexCoordFS = TexCoord;
-	ShadowCoord = (gDepthWVP * vec4(Position, 1.0)).xyz;
+	vs_out.Color = Color;
+	vs_out.TexCoord = TexCoord;
+	vs_out.ShadowCoord = gDepthWVP * gWorld * vec4(Position, 1.0);
 	gl_Position = gWVP * vec4(Position, 1.0);
-	NormalFS = (gWorld * vec4(Normal, 0.0)).xyz;
-	WorldPos = (gWorld * vec4(Position, 1.0)).xyz;
+	vs_out.Normal = (gWorld * vec4(Normal, 0.0)).xyz;
+	vs_out.WorldPos = (gWorld * vec4(Position, 1.0)).xyz;
 }

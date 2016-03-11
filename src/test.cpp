@@ -53,20 +53,28 @@ int main(int argc, char *argv[]) {
 	int width = 2560;
 	int height = 1440;
 
+	int shadowBufSize = 4096;
+
+	// 1.0472 rad = 60 deg FOV
+	double fov = 1.0472;
+	double nearPlane = 0.1;
+	double farPlane = 1000.0;
+
 	// Setup Window
 	Window window = Window(width, height, "Depth Test");
 	window.toggleFPS();
+	window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	handleGLerror();
 
-	InputHandler* inputHandler = new InputHandler(width, height);
+	InputHandler* inputHandler = new InputHandler(width, height, fov);
 	inputHandler->subscribe(&window);
 
 	SceneGraph* scene = new SceneGraph();
 	CoordFrame* cameraFrame = new CoordFrame();
 	CoordFrame* lightFrame = new CoordFrame();
-	CoordFrame* quadFrame = new CoordFrame();
 
 	// Setup mesh
+	/*
 	Mesh* meshA = new Mesh();
 	ExpectsMsg(meshA->parseFile("hall.off"),
 			   "Error: Unable to continue without mesh.\n");
@@ -76,37 +84,54 @@ int main(int argc, char *argv[]) {
 
 	scene->addChild(meshA);
 
-	Mesh* quad = new Mesh();
-	ExpectsMsg(quad->parseFile("quad.obj"),
-			   "Error: Unable to continue without mesh.\n");
+	vec3 cameraPos = vec3(0, 5, -5);
+	vec3 cameraLookAt = vec3(0, 0, 0);
+	vec3 cameraUp = vec3(0, 1, 0);
+	vec3 lightPos = vec3(0,-5, -3);
+	vec3 lightLookAt = vec3(0, 10, 5);
+	vec3 lightUp = vec3(0, 1, 0);
+	lightFrame->setOrtho(-100,100,-100,100,-100,100);
 
-	// 1.0472 rad = 60 deg FOV
-	double fov = 1.0472;
-	double nearPlane = 0.1;
-	double farPlane = 1000.0;
-	cameraFrame->setPerspective(fov, width, height, nearPlane, farPlane);
-	lightFrame->setViewport(0, 0, 1024, 1024);
-	quadFrame->setPerspective(fov, width, height, nearPlane, farPlane);
-	//lightFrame->setOrtho(-100,100,-100,100,-100,100);
-	//lightFrame->setPerspective(fov, 1024, 1024, nearPlane, farPlane);
-	/*
-	vec3 d = vec3(2, -1, 0);
-	vec3 c = vec3(2, 0, 1);
-	vec3 up = vec3(0, 1, 0);
 	*/
-	vec3 d = vec3(0, 5, -5);
-	vec3 c = vec3(0, 0, 0);
-	vec3 up = vec3(0, 1, 0);
-	cameraFrame->setCamera(d, c, up);
 
-	vec3 direction = vec3(-1,-2,3);
-	lightFrame->setCamera(direction, c, up);
+	Mesh* meshA = new Mesh();
+	ExpectsMsg(meshA->parseFile("teapot.off"),
+			   "Error: Unable to continue without mesh.\n");
+	inputHandler->selectedObject = meshA->getRefFrame();
 
-	vec3 quadDir = vec3(0, 0,-2);
-	quadFrame->setCamera(quadDir, c , up);
+	Mesh* meshB = new Mesh();
+	ExpectsMsg(meshB->parseFile("plane.off"),
+			   "Error: Unable to continue without mesh.\n");
+	mat4* meshRef = meshB->getRefFrame();
+	*meshRef = scale(*meshRef, vec3(10.0,10.0,10.0));
+	*meshRef = rotate(*meshRef, -1.56f, vec3(1,0,0));
+
+	SceneNode* transform = new SceneNode();	
+
+	transform->addChild(meshA);
+	transform->addChild(meshB);
+	scene->addChild(transform);
+
+	vec3 cameraPos = vec3(0, 5, -5);
+	vec3 cameraLookAt = vec3(0, 0, 0);
+	vec3 cameraUp = vec3(0, 1, 0);
+	vec3 lightPos = vec3(-1, 5, 0);
+	vec3 lightLookAt = vec3(0, 0, 0);
+	vec3 lightUp = vec3(0, 1, 0);
+	lightFrame->setOrtho(-10,10,-10,10,-10,10);
+
+
+	inputHandler->position = cameraPos;
+	inputHandler->up = cameraUp;
+	
+	cameraFrame->setPerspective(fov, width, height, nearPlane, farPlane);
+	lightFrame->setViewport(0, 0, shadowBufSize, shadowBufSize);
+
+	cameraFrame->setCamera(cameraPos, cameraLookAt, cameraUp);
+	lightFrame->setCamera(lightPos, lightLookAt, lightUp);
 
 	FrameBuffer fbo;
-	fbo.initDepth();
+	fbo.init(shadowBufSize, shadowBufSize, GL_DEPTH_COMPONENT32F, GL_NONE);
 	ShadowShader* shadow = new ShadowShader();
 	LightShader* light = new LightShader();
 	shadow->init();
@@ -119,19 +144,21 @@ int main(int argc, char *argv[]) {
 	glFrontFace(GL_CCW);
 
 	lightFrame->subscribe(shadow);
-	quadFrame->subscribe(light);
-	//cameraFrame->subscribe(light);
+	cameraFrame->subscribe(light);
 	
 	// Run until user closes the window
 	while (window.isActive()) {
+		double currentTime = glfwGetTime();
+		inputHandler->deltaTime = float(currentTime - inputHandler->lastTime);
+		inputHandler->lastTime = currentTime;
 
   		// Render next frame
     	vec2 dim = window.initFrame();
-    	
+    	glCullFace(GL_FRONT);
     	shadow->enable();
 
+    	glViewport(0, 0, shadowBufSize, shadowBufSize);
     	fbo.bindForWriting();
-    	glViewport(0, 0, 1024, 1024);
 
     	glClear(GL_DEPTH_BUFFER_BIT);
     	lightFrame->resetWorldMatrix();
@@ -141,22 +168,28 @@ int main(int argc, char *argv[]) {
     	shadow->disable();
 
     	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    	fbo.bindForReading();
 
-		//cameraFrame->setViewport(0, 0, dim.x, dim.y);
-		quadFrame->setViewport(0, 0, dim.x, dim.y);
+		cameraFrame->setViewport(0, 0, dim.x, dim.y);
+		cameraFrame->setPerspective(inputHandler->FoV, dim.x, dim.y, nearPlane, farPlane);
+		cameraPos = inputHandler->position;
+		cameraLookAt = cameraPos + inputHandler->direction;
+		cameraUp = inputHandler->up;
+		cameraFrame->setCamera(
+			cameraPos,
+			cameraLookAt,
+			cameraUp);
 		glViewport(0, 0, dim.x, dim.y);
-
+		glCullFace(GL_BACK);
 		light->enable();
 		light->setDepthWVP(lightFrame->getPCW());
+		light->setViewPos(cameraPos);
+		light->setLightPos(lightPos);
 
 		fbo.bindForReading(GL_TEXTURE0);
 
-		//cameraFrame->resetWorldMatrix();
-		quadFrame->resetWorldMatrix();
+		cameraFrame->resetWorldMatrix();
 
-		//scene->traverse(cameraFrame);
-		((SceneGraph*)quad)->traverse(quadFrame);
+		scene->traverse(cameraFrame);
 
 		fbo.unbind();
 

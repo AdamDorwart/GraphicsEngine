@@ -142,6 +142,14 @@ void Window::finalizeFrame() {
 	glfwPollEvents();
 }
 
+void Window::setMousePos(double xpos, double ypos) {
+	glfwSetCursorPos(m_glfwWindow, xpos, ypos);
+}
+
+void Window::setInputMode(int mode, int value) {
+	glfwSetInputMode(m_glfwWindow, mode, value);
+}
+
 void Window::errorCallback(int error, const char* description) {
 	LogError("GLFW ERROR: code %i msg: %s\n", error, description);
 }

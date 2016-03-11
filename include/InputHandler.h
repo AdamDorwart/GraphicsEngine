@@ -8,6 +8,22 @@ class InputHandler : public InputListener {
 		int width, height;
 		bool renderMeshA;
 		bool flatShading;
+		bool toggleMesh;
+
+		double lastTime;
+		float deltaTime;
+
+		vec3 direction;
+		vec3 right;
+		vec3 position;
+		vec3 up;
+		float speed;
+		// horizontal angle : toward -Z
+		float horizontalAngle;
+		// vertical angle : 0, look at the horizon
+		float verticalAngle;
+		float FoV;
+		float initialFoV;
 	
 		mat4* selectedObject;
 
@@ -16,7 +32,7 @@ class InputHandler : public InputListener {
 		bool leftMousePressed;
 		int lastMX, lastMY;
 		
-		InputHandler(int width, int height);
+		InputHandler(int width, int height, float initialFoV);
 		~InputHandler();
 
 		void subscribe(Window* window);

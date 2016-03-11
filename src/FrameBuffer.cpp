@@ -29,16 +29,29 @@ bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType
 	m_width = width;
 	m_height = height;
 
-	GLenum format, type;
+	GLenum colorF, colorT, depthF, depthT;
 
 	switch (colorType) {
-		case GL_RGB32F:
-			format = GL_RGB;
-			type = GL_FLOAT;
+		case GL_RGBA32F:
+			colorF = GL_RGBA;
+			colorT = GL_FLOAT;
 			break;
 		case GL_R32F:
-			format = GL_RED;
-			type = GL_FLOAT;
+			colorF = GL_RED;
+			colorT = GL_FLOAT;
+			break;
+		case GL_NONE:
+			break;
+	}
+
+	switch (depthType) {
+		case GL_DEPTH_COMPONENT16:
+			depthF = GL_DEPTH_COMPONENT;
+			depthT = GL_FLOAT;
+			break;
+		case GL_DEPTH_COMPONENT32F:
+			depthF = GL_DEPTH_COMPONENT;
+			depthT = GL_FLOAT;
 			break;
 		case GL_NONE:
 			break;
@@ -53,7 +66,7 @@ bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType
 		glGenTextures(1, &m_texture);
 
 		glBindTexture(GL_TEXTURE_2D, m_texture);
-		glTexImage2D(GL_TEXTURE_2D, 0, type, width, height, 0, format, type, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, colorType, width, height, 0, colorF, colorT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -71,17 +84,15 @@ bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType
 		glBindTexture(GL_TEXTURE_2D, m_depthTex);
 
 		// depth
-		glTexImage2D(GL_TEXTURE_2D, 0, depthType, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, depthType, width, height, 0, depthF, depthT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-		glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-		glBindTexture(GL_TEXTURE_2D, 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		GLfloat borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTex, 0);
-		//glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_depthTex, 0);
 
 		if (colorType == GL_NONE) {
 			glDrawBuffer(GL_NONE);
@@ -92,61 +103,32 @@ bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
 	EnsuresMsg(status == GL_FRAMEBUFFER_COMPLETE,
-		"FB error, status: 0x%x\n", status);
+		"FB error, status: 0x%x\n" 
+		"\tIncomplete Attachment=0x%x\n"
+		"\tIncomplete DrawBuffer=0x%x\n"
+		"\tIncomplete ReadBuffer=0x%x\n"
+		"\tMissing Attachment=0x%x\n"
+		"\tUnsupported=0x%x\n"
+		"\tUndefined=0x%x\n", status, 
+		GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT,
+		GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER,
+		GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER,
+		GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT,
+		GL_FRAMEBUFFER_UNSUPPORTED,
+		GL_FRAMEBUFFER_UNDEFINED);
 
 	// restore default FBO
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	if (colorType == GL_NONE) {
-		glDrawBuffer(GL_BACK);
-		glReadBuffer(GL_BACK);
-	}
 
-	return true;
-}
-
-bool FrameBuffer::initDepth() {
-	GLuint FramebufferName = 0;
-	glGenFramebuffers(1, &m_fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-
-	// Depth texture. Slower than a depth buffer, but you can sample it later in your shader
-	GLuint depthTexture;
-	glGenTextures(1, &m_depthTex);
-	glBindTexture(GL_TEXTURE_2D, m_depthTex);
-	glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH_COMPONENT, 1024, 1024, 0,GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_depthTex, 0);
-
-	glDrawBuffer(GL_NONE); // No color buffer is drawn to.
-
-	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
-	// Always check that our framebuffer is ok
-	EnsuresMsg(status == GL_FRAMEBUFFER_COMPLETE,
-		"FB error, status: 0x%x\n", status);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	return true;
 }
 
 void FrameBuffer::bindForWriting() {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-	if (m_colorType == GL_NONE) {
-		glDrawBuffer(GL_NONE);
-		glReadBuffer(GL_NONE);
-	}
 }
 
 void FrameBuffer::unbind() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	if (m_colorType == GL_NONE) {
-		glDrawBuffer(GL_BACK);
-		glReadBuffer(GL_BACK);
-	}
 }
 
 
@@ -165,6 +147,8 @@ void FrameBuffer::bindForReading(GLenum textureUnit) {
 }
 
 void FrameBuffer::draw(unsigned int width, unsigned int height) {
+	// Doesn't seem to work for depth FBOs
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	bindForReading();
 	GLenum mask;
@@ -174,7 +158,7 @@ void FrameBuffer::draw(unsigned int width, unsigned int height) {
 		mask = GL_COLOR_BUFFER_BIT;
 	}
 	// Needs to be GL_NEAREST for depth buffer blit
-	glBlitFramebuffer(0, 0, width, height,
+	glBlitFramebuffer(0, 0, m_width, m_height,
 		0, 0, width, height, mask, GL_LINEAR);
 }
 

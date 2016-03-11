@@ -52,8 +52,8 @@ void CoordFrame::setOrtho(float _left, float _right, float _bottom, float _top, 
 	p = ortho(_left, _right, _bottom, _top, _nearFace, _farFace);
 }
 
-void CoordFrame::setCamera(vec3& e, vec3& center, vec3& up) {
-	c = lookAt(e, center, up);
+void CoordFrame::setCamera(vec3& pos, vec3& lookingAt, vec3& up) {
+	c = lookAt(pos, lookingAt, up);
 }
 
 mat4 CoordFrame::getCamera() {

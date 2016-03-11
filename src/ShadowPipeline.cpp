@@ -96,6 +96,5 @@ void ShadowPipeline::addDirLight(vec3 direction) {
 	vec3 e = -direction;
 	light.frame.setCamera(e, c, up);
 	//light.fbo.init(shadow_w, shadow_h, GL_DEPTH_COMPONENT, GL_NONE);
-	light.fbo.initDepth();
 	m_dirLights.push_back(light);
 }
