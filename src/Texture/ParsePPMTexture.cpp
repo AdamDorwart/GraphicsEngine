@@ -4,14 +4,9 @@
 #include <string>
 #include "Logger.h"
 
-/** Load a ppm file from disk.
- @input filename The location of the PPM file.  If the file is not found, an error message
- will be printed and this function will return 0
- @input width This will be modified to contain the width of the loaded image, or 0 if file not found
- @input height This will be modified to contain the height of the loaded image, or 0 if file not found
- @return Returns the RGB pixel data as interleaved unsigned chars (R0 G0 B0 R1 G1 B1 R2 G2 B2 .... etc) or 0 if an error ocured
- **/
-bool ParsePPMTexture(Texture* texture, const char* filename) {
+// Seems to be buggy with test.ppm. Needs more testing
+
+bool ParsePPMTexture(Texture* texture, const char* filename, unsigned int texType, unsigned int side) {
     const int BUFSIZE = 128;
     FILE* fp;
     size_t read;
@@ -21,8 +16,8 @@ bool ParsePPMTexture(Texture* texture, const char* filename) {
     size_t retval_sscanf;
     
     //Open the texture file
-    if ((fp=fopen(filename, "rb")) == NULL) {
-        LogError("Error reading ppm file, could not locate %s\n", filename);
+    if ((fp=fopen((std::string(TEXTURE_PATH) + filename).c_str(), "rb")) == NULL) {
+        LogError("Error reading ppm file, could not locate %s\n", (std::string(TEXTURE_PATH) + filename).c_str());
         texture->width = 0;
         texture->height = 0;
         return false;
@@ -65,23 +60,18 @@ bool ParsePPMTexture(Texture* texture, const char* filename) {
     glGenTextures(1, &(texture->id));
     
     //Set this texture to be the one we are working with
-    glBindTexture(GL_TEXTURE_2D, texture->id);
+    glBindTexture(texType, texture->id);
     
     //Generate the texture
-    glTexImage2D(GL_TEXTURE_2D, 0, 3, texture->width, texture->height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture->data);
+    glTexImage2D(side, 0, GL_RGB, texture->width, texture->height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture->data);
     
     //Make sure no bytes are padded:
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    
-    //Select GL_MODULATE to mix texture with quad color for shading:
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    
-    //Use bilinear interpolation:
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(texType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(texType, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     
     //And unbind it!
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(texType, 0);
 
     return true;
 }

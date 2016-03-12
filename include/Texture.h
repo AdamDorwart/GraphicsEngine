@@ -1,14 +1,19 @@
 #pragma once
+#include <GLFW/glfw3.h>
+
+
+#ifndef TEXTURE_PATH
+#define TEXTURE_PATH "../media/"
+#endif
 
 class Texture;
-bool ParsePPMTexture(Texture* tex, const char* filename);
-bool ParseTGATexture(Texture* tex, const char* filename);
+bool ParsePPMTexture(Texture* tex, const char* filename, unsigned int texType=GL_TEXTURE_2D, unsigned int side=GL_TEXTURE_2D);
+bool ParseTGATexture(Texture* tex, const char* filename, unsigned int texType=GL_TEXTURE_2D, unsigned int side=GL_TEXTURE_2D);
 class Texture {
-	friend bool ParsePPMTexture(Texture* tex, const char* filename);
-	friend bool ParseTGATexture(Texture* tex, const char* filename);
+	friend bool ParsePPMTexture(Texture* tex, const char* filename, unsigned int texType, unsigned int side);
+	friend bool ParseTGATexture(Texture* tex, const char* filename, unsigned int texType, unsigned int side);
 	protected:
 		unsigned int id;
-		const char* filename;
 		unsigned int width, height;
 
 		void* data;
@@ -22,5 +27,8 @@ class Texture {
 		void unbind();
 
 		bool parseFile(const char* filename);
+
+		void setId(unsigned int id);
+		void setDimensions(unsigned int width, unsigned int height);
 
 };

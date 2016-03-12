@@ -3,23 +3,14 @@
 
 FrameBuffer::FrameBuffer() {
 	m_fbo = 0;
-	m_texture = 0;
-	m_depthTex = 0;
 	m_colorType = GL_NONE;
+	m_depthType = GL_NONE;
 }
 
 
 FrameBuffer::~FrameBuffer() {
 	if (m_fbo != 0) {
 		glDeleteFramebuffers(1, &m_fbo);
-	}
-
-	if (m_texture != 0) {
-		glDeleteTextures(1, &m_texture);
-	}
-
-	if (m_depthTex != 0) {
-		glDeleteTextures(1, &m_depthTex);
 	}
 }
 
@@ -63,25 +54,30 @@ bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType
 
 	// Create the textures
 	if (colorType != GL_NONE) {
-		glGenTextures(1, &m_texture);
+		GLuint colorTex;
+		glGenTextures(1, &colorTex);
 
-		glBindTexture(GL_TEXTURE_2D, m_texture);
+		glBindTexture(GL_TEXTURE_2D, colorTex);
 		glTexImage2D(GL_TEXTURE_2D, 0, colorType, width, height, 0, colorF, colorT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTex, 0);
 
 		GLenum DrawBuffers[] = { GL_COLOR_ATTACHMENT0 };
 
 		glDrawBuffers(1, DrawBuffers);
+
+		m_colorTex.setId(colorTex);
+		m_colorTex.setDimensions(width, height);
 	}
 
 	// Create the depth buffer 
 	if (depthType != GL_NONE) {
-		glGenTextures(1, &m_depthTex);
-		glBindTexture(GL_TEXTURE_2D, m_depthTex);
+		GLuint depthTex;
+		glGenTextures(1, &depthTex);
+		glBindTexture(GL_TEXTURE_2D, depthTex);
 
 		// depth
 		glTexImage2D(GL_TEXTURE_2D, 0, depthType, width, height, 0, depthF, depthT, NULL);
@@ -92,12 +88,15 @@ bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType
 		GLfloat borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
 		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTex, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
 
 		if (colorType == GL_NONE) {
 			glDrawBuffer(GL_NONE);
 			glReadBuffer(GL_NONE);
 		}
+
+		m_depthTex.setId(depthTex);
+		m_depthTex.setDimensions(width, height);
 	}
 
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -136,14 +135,23 @@ void FrameBuffer::bindForReading() {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 }
+
 void FrameBuffer::bindForReading(GLenum textureUnit) {
 	glActiveTexture(textureUnit);
 
 	if (m_colorType == GL_NONE) {
-		glBindTexture(GL_TEXTURE_2D, m_depthTex);
+		m_depthTex.bind();
 	} else {
-		glBindTexture(GL_TEXTURE_2D, m_texture);
+		m_colorTex.bind();
 	}
+}
+
+Texture* FrameBuffer::getDepthTexture() {
+	return &m_depthTex;
+}
+
+Texture* FrameBuffer::getColorTexture() {
+	return &m_colorTex;
 }
 
 void FrameBuffer::draw(unsigned int width, unsigned int height) {

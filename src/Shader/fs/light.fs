@@ -10,7 +10,8 @@ in VS_OUT {
     vec4 ShadowCoord;
 } fs_in;
 
-uniform sampler2D Texture0;
+uniform sampler2D ShadowMap;
+uniform samplerCube CubeMap;
 
 uniform vec3 gLightPos;
 uniform vec3 gViewPos;
@@ -30,7 +31,7 @@ float LinearizeDepth(float depth) {
 float ShadowCalculation(vec4 shadowCoord, float bias) {
 	float visible = 1.0;
 	vec3 projCoords = shadowCoord.xyz / shadowCoord.w;
-	float lightDepth = texture(Texture0, projCoords.xy).r;
+	float lightDepth = texture(ShadowMap, projCoords.xy).r;
 	if (lightDepth < projCoords.z-bias &&
 		projCoords.z <= 1.0) {
 		visible = 0;
@@ -46,8 +47,11 @@ float ShadowCalculation(vec4 shadowCoord, float bias) {
 
 void main () {
 	//vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb;
-    vec3 color = fs_in.Color;
+    vec3 viewDir = normalize(gViewPos - fs_in.WorldPos);
     vec3 normal = normalize(fs_in.Normal);
+    vec3 cubeMapReflect = reflect(viewDir, normal);
+    vec3 color = texture(CubeMap, cubeMapReflect).rgb;
+    
     vec3 lightColor = vec3(1.0);
     // Ambient
     vec3 ambient = 0.15 * color;
@@ -56,7 +60,7 @@ void main () {
     float diff = max(dot(lightDir, normal), 0.0);
     vec3 diffuse = diff * lightColor;
     // Specular
-    vec3 viewDir = normalize(gViewPos - fs_in.WorldPos);
+    
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = 0.0;
     vec3 halfwayDir = normalize(lightDir + viewDir);  
@@ -69,7 +73,7 @@ void main () {
     vec3 lighting = (ambient + visible * (diffuse + specular)) * color;
 
     FragColor = vec4(lighting, 1.0f);
-
+    
     // Used to debug shadow buffer
 	//float depth = texture(Texture0, TexCoordFS).r;
     //frag_color = vec4(vec3(LinearizeDepth(depth) / far_plane), 1.0); // perspective

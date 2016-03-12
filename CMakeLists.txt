@@ -38,6 +38,7 @@ set(SOURCES
     src/ShadowPipeline.cpp
 
     src/Texture/Texture.cpp
+    src/Texture/CubeMap.cpp
     src/Texture/ParsePPMTexture.cpp
     src/Texture/ParseTGATexture.cpp
 
@@ -57,7 +58,8 @@ find_package(OpenGL REQUIRED)
 # Compiler macro definitions
 add_definitions(-DLOG_FILE="log.txt"
                 -DSHADER_PATH="../src/Shader/"
-                -DMODEL_PATH="../media/"
+                -DMODEL_PATH="../media/model/"
+                -DTEXTURE_PATH="../media/texture/"
                 -DTHROW_CONTRACT)
 
 add_subdirectory(${GLFW_SOURCE_DIR} ${GLEW_SOURCE_DIR})

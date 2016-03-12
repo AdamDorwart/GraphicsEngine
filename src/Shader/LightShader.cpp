@@ -37,7 +37,22 @@ bool LightShader::init() {
 	m_LightPosLocation = getUniformLocation("gLightPos");
 	m_ViewPosLocation = getUniformLocation("gViewPos");
 
+	m_CubeMapLocation = getUniformLocation("CubeMap");
+	m_ShadowMapLocation = getUniformLocation("ShadowMap");
+
 	return true;
+}
+
+void LightShader::setCubeMap(CubeMap* cubeMap) {
+	glUniform1i(m_CubeMapLocation, CUBEMAP_UNIT);
+	glActiveTexture(GL_TEXTURE0 + CUBEMAP_UNIT);
+	cubeMap->bind();
+}
+
+void LightShader::setShadowMap(Texture* shadowMap) {
+	glUniform1i(m_ShadowMapLocation, SHADOWMAP_UNIT);
+	glActiveTexture(GL_TEXTURE0 + SHADOWMAP_UNIT);
+	shadowMap->bind();
 }
 
 void LightShader::setWVP(mat4 WVP) {

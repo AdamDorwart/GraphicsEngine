@@ -2,11 +2,14 @@
 #include <glm/glm.hpp>
 #include "Shader.h"
 #include "CoordFrame.h"
+#include "CubeMap.h"
+#include "Texture.h"
 
 using namespace glm;
 
 class LightShader : public Shader, public CoordFrameListener {
 	public:
+		enum {CUBEMAP_UNIT = 0, SHADOWMAP_UNIT};
 		LightShader();
 		virtual ~LightShader();
 
@@ -17,6 +20,8 @@ class LightShader : public Shader, public CoordFrameListener {
 		void setW(mat4 w);
 		void setLightPos(vec3 pos);
 		void setViewPos(vec3 pos);
+		void setCubeMap(CubeMap* cubeMap);
+		void setShadowMap(Texture* shadowMap);
 
 		virtual void consume(CoordFrame* frame);
 	private:
@@ -26,4 +31,6 @@ class LightShader : public Shader, public CoordFrameListener {
 		GLint m_WorldLocation;
 		GLint m_LightPosLocation;
 		GLint m_ViewPosLocation;
+		GLint m_CubeMapLocation;
+		GLint m_ShadowMapLocation;
 };

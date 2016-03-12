@@ -17,7 +17,7 @@ typedef struct
     unsigned char *imageData;
 } TGAFILE;
 
-bool ParseTGATexture(Texture* texture, const char* filename) {
+bool ParseTGATexture(Texture* texture, const char* filename, unsigned int texType, unsigned int side) {
     FILE *filePtr;
     unsigned char ucharBad;
     short int sintBad;
@@ -28,9 +28,9 @@ bool ParseTGATexture(Texture* texture, const char* filename) {
     TGAFILE tgaFile;
 
     // Open the TGA file.
-    filePtr = fopen(filename, "rb");
+    filePtr = fopen((std::string(TEXTURE_PATH) + filename).c_str(), "rb");
     if (filePtr == NULL) {
-        LogError("Error reading tga file, could not locate %s\n", filename);
+        LogError("Error reading tga file, could not locate %s\n", (std::string(TEXTURE_PATH) + filename).c_str());
         return false;
     }
 
@@ -90,16 +90,14 @@ bool ParseTGATexture(Texture* texture, const char* filename) {
     texture->size = imageSize;
     texture->data = tgaFile.imageData;
 
-    //Create ID for texture
-    glGenTextures(1, &(texture->id));
     
     //Set this texture to be the one we are working with
-    glBindTexture(GL_TEXTURE_2D, texture->id);
+    glBindTexture(texType, texture->id);
     
     if (colorMode == 3) { //RGB
-        glTexImage2D(GL_TEXTURE_2D, 0, 3, texture->width, texture->height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture->data);
+        glTexImage2D(side, 0, GL_RGB, texture->width, texture->height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture->data);
     } else if (colorMode == 4) { //RGBA
-        glTexImage2D(GL_TEXTURE_2D, 0, 3, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+        glTexImage2D(side, 0, GL_RGBA, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
     } else {
         LogError("Error parsing tga texture. Unsupported format.\n");
         delete[] texture->data;
@@ -108,15 +106,10 @@ bool ParseTGATexture(Texture* texture, const char* filename) {
 
     //Make sure no bytes are padded:
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    
-    //Select GL_MODULATE to mix texture with quad color for shading:
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    
-    //Use bilinear interpolation:
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(texType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(texType, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     
     //And unbind it!
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(texType, 0);
     return true;
 }

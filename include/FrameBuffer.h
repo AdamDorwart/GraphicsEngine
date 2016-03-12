@@ -1,6 +1,7 @@
 #pragma once
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include "Texture.h"
 
 class FrameBuffer
 {
@@ -18,6 +19,9 @@ class FrameBuffer
 		void bindForReading();
 		void bindForReading(GLenum textureUnit);
 
+		Texture* getDepthTexture();
+		Texture* getColorTexture();
+
 		void draw(unsigned int width, unsigned int height);
 
 		unsigned int getWidth();
@@ -26,8 +30,8 @@ class FrameBuffer
 	private:
 		unsigned int m_width, m_height;
 		GLuint m_fbo;
-		GLuint m_texture;
-		GLuint m_depthTex;
+		Texture m_colorTex;
+		Texture m_depthTex;
 		GLenum m_depthType;
 		GLenum m_colorType;
 };

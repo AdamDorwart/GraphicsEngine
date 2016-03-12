@@ -13,6 +13,7 @@
 #include "LightShader.h"
 #include "Mesh.h"
 #include "CoordFrame.h"
+#include "CubeMap.h"
 
 using namespace glm;
 
@@ -92,6 +93,9 @@ int main(int argc, char *argv[]) {
 	vec3 lightUp = vec3(0, 1, 0);
 	lightFrame->setOrtho(-100,100,-100,100,-100,100);
 	*/
+	
+	CubeMap* cubeMap = new CubeMap();
+	cubeMap->load("sky18.tga");
 
 	Mesh* meshA = new Mesh();
 	ExpectsMsg(meshA->parseFile("teapot.off"),
@@ -118,7 +122,26 @@ int main(int argc, char *argv[]) {
 	vec3 lightLookAt = vec3(0, 0, 0);
 	vec3 lightUp = vec3(0, 1, 0);
 	lightFrame->setOrtho(-10,10,-10,10,-10,10);
+	
+	/*
+	Texture* texture = new Texture();
+	texture->parseFile("test.tga");
 
+	Mesh* meshA = new Mesh();
+	ExpectsMsg(meshA->parseFile("quad.obj"),
+			   "Error: Unable to continue without mesh.\n");
+	inputHandler->selectedObject = meshA->getRefFrame();
+	
+	scene->addChild(meshA);
+
+	vec3 cameraPos = vec3(0, 0, -2);
+	vec3 cameraLookAt = vec3(0, 0, 0);
+	vec3 cameraUp = vec3(0, 1, 0);
+	vec3 lightPos = vec3(-1, 5, 0);
+	vec3 lightLookAt = vec3(0, 0, 0);
+	vec3 lightUp = vec3(0, 1, 0);
+	lightFrame->setOrtho(-10,10,-10,10,-10,10);
+	*/
 
 	inputHandler->position = cameraPos;
 	inputHandler->up = cameraUp;
@@ -141,7 +164,8 @@ int main(int argc, char *argv[]) {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
-
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	
 	lightFrame->subscribe(shadow);
 	cameraFrame->subscribe(light);
 	
@@ -184,12 +208,14 @@ int main(int argc, char *argv[]) {
 		light->setViewPos(cameraPos);
 		light->setLightPos(lightPos);
 
-		fbo.bindForReading(GL_TEXTURE0);
+		light->setShadowMap(fbo.getDepthTexture());
+		light->setCubeMap(cubeMap);
 
 		cameraFrame->resetWorldMatrix();
 
 		scene->traverse(cameraFrame);
 
+		cubeMap->unbind();
 		fbo.unbind();
 
 		light->disable();
