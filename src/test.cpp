@@ -91,7 +91,6 @@ int main(int argc, char *argv[]) {
 	vec3 lightLookAt = vec3(0, 10, 5);
 	vec3 lightUp = vec3(0, 1, 0);
 	lightFrame->setOrtho(-100,100,-100,100,-100,100);
-
 	*/
 
 	Mesh* meshA = new Mesh();

@@ -1,21 +1,26 @@
 #pragma once
 
-class Texture {  
+class Texture;
+bool ParsePPMTexture(Texture* tex, const char* filename);
+bool ParseTGATexture(Texture* tex, const char* filename);
+class Texture {
+	friend bool ParsePPMTexture(Texture* tex, const char* filename);
+	friend bool ParseTGATexture(Texture* tex, const char* filename);
 	protected:
-	    
-	    const char* filename;
-	    
-	    static unsigned char* loadPPM(const char*, int&, int&);
-	    
+		unsigned int id;
+		const char* filename;
+		unsigned int width, height;
+
+		void* data;
+		unsigned int size;
+
 	public:
-	    
-	    unsigned int id;
-	    
-	    Texture(void);
-	    Texture(const char* filename);
-	    virtual ~Texture(void);
-	    
-	    void bind(void);
-	    void unbind(void);
-    
+		Texture();
+		~Texture();
+
+		void bind();
+		void unbind();
+
+		bool parseFile(const char* filename);
+
 };

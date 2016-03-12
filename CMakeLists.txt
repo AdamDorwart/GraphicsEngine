@@ -32,11 +32,14 @@ set(SOURCES
     
     src/SceneGraph.cpp
     src/CoordFrame.cpp
-    src/Texture.cpp
     src/FrameBuffer.cpp
 
     src/RenderPipeline.cpp
     src/ShadowPipeline.cpp
+
+    src/Texture/Texture.cpp
+    src/Texture/ParsePPMTexture.cpp
+    src/Texture/ParseTGATexture.cpp
 
     src/Mesh/Mesh.cpp
     src/Mesh/MeshSimplifier.cpp

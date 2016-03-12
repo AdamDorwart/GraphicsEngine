@@ -31,13 +31,15 @@ float ShadowCalculation(vec4 shadowCoord, float bias) {
 	float visible = 1.0;
 	vec3 projCoords = shadowCoord.xyz / shadowCoord.w;
 	float lightDepth = texture(Texture0, projCoords.xy).r;
-	if (lightDepth < projCoords.z+bias &&
+	if (lightDepth < projCoords.z-bias &&
 		projCoords.z <= 1.0) {
+		visible = 0;
+		/*
 		if (lightDepth < projCoords.z-bias) {
 			visible = 0;
 		} else {
 			visible = lightDepth / exp(shadowExpC*projCoords.z);
-		}
+		}*/
 	}
 	return visible;
 }

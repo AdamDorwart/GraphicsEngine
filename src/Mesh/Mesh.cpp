@@ -144,6 +144,7 @@ bool Mesh::parseFile(const char* filename) {
 		return ParseOBJMesh(this, filename);
 	} else {
 		LogError("Unable to load %s as mesh: Unsupported file format\n", filename);
+		return false;
 	}
 }
 
