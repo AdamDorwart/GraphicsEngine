@@ -43,35 +43,22 @@ bool ParsePPMTexture(Texture* texture, const char* filename, unsigned int texTyp
     
     //Read image data:
     texture->size = texture->width * texture->height * 3;
-    texture->data = (void*) new unsigned char[texture->size];
-    read = fread(texture->data, texture->size, 1, fp);
+    texture->data.resize(texture->size);
+    read = fread(&(texture->data[0]), texture->size, 1, fp);
     fclose(fp);
     
     //If the read was a failure, error
     if(read != 1) {
         LogError("Error parsing ppm file, incomplete data.\n");
-        delete[] texture->data;
         texture->width = 0;
         texture->height = 0;
         return false;
     }
-    
-    //Create ID for texture
-    glGenTextures(1, &(texture->id));
-    
-    //Set this texture to be the one we are working with
-    glBindTexture(texType, texture->id);
-    
-    //Generate the texture
-    glTexImage2D(side, 0, GL_RGB, texture->width, texture->height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture->data);
-    
-    //Make sure no bytes are padded:
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexParameteri(texType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(texType, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    
-    //And unbind it!
-    glBindTexture(texType, 0);
+
+    texture->dataType = GL_UNSIGNED_BYTE;
+    texture->colorType = GL_RGB;
+
+    texture->setup(texType, side);
 
     return true;
 }

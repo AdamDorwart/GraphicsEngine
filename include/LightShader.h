@@ -1,15 +1,15 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "Shader.h"
+#include "MaterialShader.h"
 #include "CoordFrame.h"
 #include "CubeMap.h"
 #include "Texture.h"
 
 using namespace glm;
 
-class LightShader : public Shader, public CoordFrameListener {
+class LightShader : public MaterialShader, public CoordFrameListener {
 	public:
-		enum {CUBEMAP_UNIT = 0, SHADOWMAP_UNIT};
+		enum {CUBEMAP_UNIT = MaterialShader::NEXT_AVIL_UNIT, SHADOWMAP_UNIT};
 		LightShader();
 		virtual ~LightShader();
 

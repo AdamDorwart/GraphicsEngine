@@ -22,7 +22,7 @@ InputHandler::InputHandler(int _width, int _height, float _initialFov) {
 	up = vec3(0,1,0);
 	right = vec3(1,0,0);
 	
-	speed = 5.0;
+	speed = 1.0;
 	// horizontal angle : toward -Z
 	horizontalAngle = 3.14f;
 	// vertical angle : 0, look at the horizon
@@ -99,28 +99,28 @@ void InputHandler::consumeKey(Window* window, int key, int scancode, int action,
 				if (toggleMesh) {
 					position += direction*deltaTime*speed;
 				} else if (selectedObject != NULL) {
-					*selectedObject = translate(*selectedObject, vec3(0,speed*deltaTime,0));
+					*selectedObject = translate(*selectedObject, vec3(0,speed/4.0*deltaTime,0));
 				}
 				break;
 			case GLFW_KEY_S:
 				if (toggleMesh) {
 					position += -direction*deltaTime*speed;
 				} else if (selectedObject != NULL) {
-					*selectedObject = translate(*selectedObject, vec3(0,-deltaTime*speed,0));
+					*selectedObject = translate(*selectedObject, vec3(0,-deltaTime*speed/4.0,0));
 				}
 				break;
 			case GLFW_KEY_A:
 				if (toggleMesh) {
 					position += -right*deltaTime*speed;
 				} else if (selectedObject != NULL) {
-					*selectedObject = translate(*selectedObject, vec3(-deltaTime*speed,0,0));
+					*selectedObject = translate(*selectedObject, vec3(-deltaTime*speed/4.0,0,0));
 				}
 				break;
 			case GLFW_KEY_D:
 				if (toggleMesh) {
 					position += right*deltaTime*speed;
 				} else if (selectedObject != NULL) {
-					*selectedObject = translate(*selectedObject, vec3(deltaTime*speed,0,0));
+					*selectedObject = translate(*selectedObject, vec3(deltaTime*speed/4.0,0,0));
 				}
 				break;
 		}

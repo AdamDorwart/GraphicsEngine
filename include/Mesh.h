@@ -8,9 +8,11 @@
 #include <glm/glm.hpp>
 #include <limits>
 #include "SceneGraph.h"
+#include "Material.h"
+#include "MaterialShader.h"
 
 #ifndef MODEL_PATH
-#define MODEL_PATH "../media/"
+#define MODEL_PATH "../media/model/"
 #endif
 
 using namespace glm;
@@ -35,8 +37,9 @@ struct Triangle {
 struct Datum {
 	vec3 p;  // Position
 	vec3 n;  // Normal
+	vec3 tn; // Tangent
+	vec3 bn; // Bitangent
 	vec2 t;  // Texture Coords
-	vec3 c;  // Color
 	float v; // Visibility
 
 	bool operator== (const Datum& d) const {
@@ -61,30 +64,41 @@ struct DatumHasher {
         seed ^= hasher(d.n[1]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
         seed ^= hasher(d.n[2]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
 
+        seed ^= hasher(d.tn[0]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+        seed ^= hasher(d.tn[1]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+        seed ^= hasher(d.tn[2]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+
+        seed ^= hasher(d.bn[0]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+        seed ^= hasher(d.bn[1]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+        seed ^= hasher(d.bn[2]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+
         seed ^= hasher(d.t[0]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
         seed ^= hasher(d.t[1]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-
-        seed ^= hasher(d.c[0]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-        seed ^= hasher(d.c[1]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-        seed ^= hasher(d.c[2]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
 
         seed ^= hasher(d.v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
         return seed;
     }
 };
 
+#include <unordered_map>
 class Mesh;
 class MeshSimplifier;
 bool ParseOFFMesh(Mesh*, const char*);
 bool ParseOBJMesh(Mesh*, const char*);
+bool ParseOBJMeshMaterial(std::unordered_map<std::string, Mesh>& meshes, const char* filename);
 class Mesh : public SceneNode {
 	friend class MeshSimplifier;
 	friend bool ParseOFFMesh(Mesh*, const char*);
 	friend bool ParseOBJMesh(Mesh*, const char*);
+	friend bool ParseOBJMeshMaterial(std::unordered_map<std::string, Mesh>& meshes, const char* filename);
 	protected:
+		static MaterialShader* m_materialShader;
+
 		//Storage vectors
 		std::vector<IndexType> indices;
 		std::vector<Datum> buffer;
+
+		Material* material;
 
 		double maxWidth, maxHeight, maxDepth;
 		vec3 center;
@@ -100,16 +114,19 @@ class Mesh : public SceneNode {
 		// Buffer IDs
 		enum { DATA_BUFFER = 0, INDEX_BUFFER, NUM_OF_BUFFERS};
 		// Layout location of data sent to shaders
-		enum { POSITION_LOCATION = 0, NORMAL_LOCATION, TEXCOORD_LOCATION, COLOR_LOCATION, VISIBLE_LOCATION};
+		enum { POSITION_LOCATION = 0, NORMAL_LOCATION, TANGENT_LOCATION, BITANGENT_LOCATION, TEXCOORD_LOCATION, VISIBLE_LOCATION};
 
 		Mesh();
 		Mesh(const Mesh& m);
 		~Mesh();
 
+		static void setMaterialShader(MaterialShader* shader);
+
 		virtual void draw();
-		void drawEdge(IndexType v1, IndexType v2);
+		virtual void drawDebug(CoordFrame* frame);
 		
 		void createVertexNormals();
+		void createVertexTangents();
 
 		double getMaxWidth();
 		double getMaxHeight();
@@ -120,6 +137,7 @@ class Mesh : public SceneNode {
 		void deleteBuffers();
 
 		bool parseFile(const char* filename);
+		void setMaterial(Material* material);
 
 		void updateVBO();
 

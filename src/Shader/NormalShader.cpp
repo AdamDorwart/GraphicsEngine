@@ -16,18 +16,18 @@ bool NormalShader::init() {
 		return false;
 	}
 
-	if (!addShader(GL_VERTEX_SHADER, "vs/simple.vs")) {
-		LogError("Unable to add vertex shader: simple.vs\n");
+	if (!addShader(GL_VERTEX_SHADER, "vs/normal.vs")) {
+		LogError("Unable to add vertex shader: normal.vs\n");
 		return false;
 	}
 
-	if (!addShader(GL_GEOMETRY_SHADER, "gs/simple.gs")) {
-		LogError("Unable to add geometry shader: simple.gs\n");
+	if (!addShader(GL_GEOMETRY_SHADER, "gs/normal.gs")) {
+		LogError("Unable to add geometry shader: normal.gs\n");
 		return false;
 	}
 
 	if (!addShader(GL_FRAGMENT_SHADER, "fs/normal.fs")) {
-		LogError("Unable to add fragment shader: simple.fs\n");
+		LogError("Unable to add fragment shader: normal.fs\n");
 		return false;
 	}
 

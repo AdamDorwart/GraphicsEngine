@@ -3,6 +3,7 @@
 SceneNode::SceneNode() {
 	m_refFrame = mat4(1.0f);
 	m_visible = true;
+	m_useDebugDraw = false;
 }
 
 SceneNode::~SceneNode() {
@@ -12,7 +13,11 @@ SceneNode::~SceneNode() {
 void SceneNode::traverse(CoordFrame* frame) {
 	if (m_visible) {
 		frame->pushWorldMatrix(m_refFrame);
-		draw();
+		if (m_useDebugDraw) {
+			drawDebug(frame);
+		} else {
+			draw();
+		}
 		for (auto node : m_children) {
 			node->traverse(frame);
 		}
@@ -21,6 +26,11 @@ void SceneNode::traverse(CoordFrame* frame) {
 }
 
 void SceneNode::draw() {
+	// Children classes will implement this.
+	// Must be defined so traverse works for generic SceneNodes
+}
+
+void SceneNode::drawDebug(CoordFrame* frame) {
 	// Children classes will implement this.
 	// Must be defined so traverse works for generic SceneNodes
 }
@@ -45,4 +55,12 @@ void SceneNode::setVisible(bool newVis) {
 
 bool SceneNode::getVisible() {
 	return m_visible;
+}
+
+void SceneNode::setDebugDraw(bool newState) {
+	m_useDebugDraw = newState;
+}
+
+bool SceneNode::getDebugDraw() {
+	return m_useDebugDraw;
 }

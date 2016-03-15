@@ -13,12 +13,14 @@ class SceneNode {
 	protected:
 		mat4 m_refFrame;
 		bool m_visible;
+		bool m_useDebugDraw;
 	public:
 		SceneNode();
 		~SceneNode();
 
 		void traverse(CoordFrame* frame);
 		virtual void draw();
+		virtual void drawDebug(CoordFrame* frame);
 
 		SceneNode* addChild(SceneNode* child);
 		SceneNode* removeChild(SceneNode* child);
@@ -27,4 +29,7 @@ class SceneNode {
 
 		void setVisible(bool newVis);
 		bool getVisible();
+
+		void setDebugDraw(bool newState);
+		bool getDebugDraw();
 };

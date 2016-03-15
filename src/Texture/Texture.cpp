@@ -2,8 +2,10 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <string>
+#include "Contract.h"
 #include "Util.h"
 #include "Logger.h"
+#include <cstring>
 
 using namespace Util;
 
@@ -12,9 +14,6 @@ Texture::Texture() {
 }
 
 Texture::~Texture() {
-	if (data != NULL) {
-		delete[] data;
-	}
 	if (id != 0) {
 		glDeleteTextures(1, &id);
 	}
@@ -53,4 +52,20 @@ void Texture::setDimensions(unsigned int _width, unsigned int _height) {
 	height = _height;
 }
 
+void Texture::setup(unsigned int texType, unsigned int side) {
+	EnsuresMsg(data.size() != 0,
+			   "Unable to build Texture with no data.\n");
+
+	glBindTexture(texType, id);
+    
+    glTexImage2D(side, 0, colorType, width, height, 0, colorType, dataType, &data[0]);
+
+    //Make sure no bytes are padded:
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexParameteri(texType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(texType, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    
+    //And unbind it!
+    glBindTexture(texType, 0);
+}
 

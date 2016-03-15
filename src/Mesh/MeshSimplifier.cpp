@@ -57,7 +57,7 @@ IndexType MeshSimplifier::pushEdgeCollapse(IndexType v1, IndexType v2, bool upda
 	Datum newData;
 	newData.p = collapseVertices(v1, v2);
 	newData.n = (mesh->buffer[v1].n + mesh->buffer[v2].n)/2.0f;
-	newData.c = (mesh->buffer[v1].c + mesh->buffer[v2].c)/2.0f;
+	//newData.c = (mesh->buffer[v1].c + mesh->buffer[v2].c)/2.0f;
 	newData.v = 1;
 	mesh->buffer.push_back(newData);
 

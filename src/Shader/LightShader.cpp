@@ -17,12 +17,12 @@ bool LightShader::init() {
 	}
 
 	if (!addShader(GL_VERTEX_SHADER, "vs/light.vs")) {
-		LogError("Unable to add vertex shader: simple.vs\n");
+		LogError("Unable to add vertex shader: light.vs\n");
 		return false;
 	}
 
 	if (!addShader(GL_FRAGMENT_SHADER, "fs/light.fs")) {
-		LogError("Unable to add fragment shader: simple.fs\n");
+		LogError("Unable to add fragment shader: light.fs\n");
 		return false;
 	}
 
@@ -39,6 +39,8 @@ bool LightShader::init() {
 
 	m_CubeMapLocation = getUniformLocation("CubeMap");
 	m_ShadowMapLocation = getUniformLocation("ShadowMap");
+
+	setupMaterialLocations();
 
 	return true;
 }

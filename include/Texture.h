@@ -1,6 +1,6 @@
 #pragma once
 #include <GLFW/glfw3.h>
-
+#include <vector>
 
 #ifndef TEXTURE_PATH
 #define TEXTURE_PATH "../media/"
@@ -15,8 +15,10 @@ class Texture {
 	protected:
 		unsigned int id;
 		unsigned int width, height;
+		unsigned int colorType;
+		unsigned int dataType;
 
-		void* data;
+		std::vector<unsigned char> data;
 		unsigned int size;
 
 	public:
@@ -31,4 +33,5 @@ class Texture {
 		void setId(unsigned int id);
 		void setDimensions(unsigned int width, unsigned int height);
 
+		void setup(unsigned int textureType=GL_TEXTURE_2D, unsigned int side=GL_TEXTURE_2D);
 };

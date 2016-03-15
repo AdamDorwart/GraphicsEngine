@@ -11,6 +11,7 @@
 #include "InputHandler.h"
 #include "ShadowPipeline.h"
 #include "LightShader.h"
+#include "NormalShader.h"
 #include "Mesh.h"
 #include "CoordFrame.h"
 #include "CubeMap.h"
@@ -93,7 +94,7 @@ int main(int argc, char *argv[]) {
 	vec3 lightUp = vec3(0, 1, 0);
 	lightFrame->setOrtho(-100,100,-100,100,-100,100);
 	*/
-	
+	/*
 	CubeMap* cubeMap = new CubeMap();
 	cubeMap->load("sky18.tga");
 
@@ -119,6 +120,33 @@ int main(int argc, char *argv[]) {
 	vec3 cameraLookAt = vec3(0, 0, 0);
 	vec3 cameraUp = vec3(0, 1, 0);
 	vec3 lightPos = vec3(-1, 5, 0);
+	vec3 lightLookAt = vec3(0, 0, 0);
+	vec3 lightUp = vec3(0, 1, 0);
+	lightFrame->setOrtho(-10,10,-10,10,-10,10);
+	*/
+	
+	CubeMap* cubeMap = new CubeMap();
+	cubeMap->load("sky18.tga");
+
+	std::unordered_map<std::string, Mesh> meshObject;
+	EnsuresMsg(ParseOBJMeshMaterial(meshObject, "nanosuit.obj"),
+			"Error: unable to continue without mesh. \n");
+
+	SceneNode* transform = new SceneNode();
+	mat4* meshRef = inputHandler->selectedObject = transform->getRefFrame();
+	*meshRef = rotate(*meshRef, 3.14f, vec3(0,1,0));
+
+	for (auto& m : meshObject) {
+		LogInfo("Adding %s mesh to scene.\n", m.first.c_str());
+		transform->addChild(&m.second);
+	}
+
+	scene->addChild(transform);
+
+	vec3 cameraPos = vec3(0, 5, -5);
+	vec3 cameraLookAt = vec3(0, 0, 0);
+	vec3 cameraUp = vec3(0, 1, 0);
+	vec3 lightPos = vec3(0, 5, -5);
 	vec3 lightLookAt = vec3(0, 0, 0);
 	vec3 lightUp = vec3(0, 1, 0);
 	lightFrame->setOrtho(-10,10,-10,10,-10,10);
@@ -156,8 +184,10 @@ int main(int argc, char *argv[]) {
 	fbo.init(shadowBufSize, shadowBufSize, GL_DEPTH_COMPONENT32F, GL_NONE);
 	ShadowShader* shadow = new ShadowShader();
 	LightShader* light = new LightShader();
+	NormalShader* normalShader = new NormalShader();
 	shadow->init();
 	light->init();
+	normalShader->init();
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -165,6 +195,7 @@ int main(int argc, char *argv[]) {
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
 	
 	lightFrame->subscribe(shadow);
 	cameraFrame->subscribe(light);
@@ -191,6 +222,8 @@ int main(int argc, char *argv[]) {
     	shadow->disable();
 
     	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    	// Enable Gamma correction for output FB
+		glEnable(GL_FRAMEBUFFER_SRGB); 
 
 		cameraFrame->setViewport(0, 0, dim.x, dim.y);
 		cameraFrame->setPerspective(inputHandler->FoV, dim.x, dim.y, nearPlane, farPlane);
@@ -204,6 +237,7 @@ int main(int argc, char *argv[]) {
 		glViewport(0, 0, dim.x, dim.y);
 		glCullFace(GL_BACK);
 		light->enable();
+		Mesh::setMaterialShader(light);
 		light->setDepthWVP(lightFrame->getPCW());
 		light->setViewPos(cameraPos);
 		light->setLightPos(lightPos);
@@ -218,7 +252,16 @@ int main(int argc, char *argv[]) {
 		cubeMap->unbind();
 		fbo.unbind();
 
+		Mesh::setMaterialShader(NULL);
 		light->disable();
+
+		cameraFrame->unsubscribe(light);
+		cameraFrame->subscribe(normalShader);
+
+		normalShader->enable();
+		cameraFrame->resetWorldMatrix();
+		scene->traverse(cameraFrame);
+		normalShader->disable();
 
         window.finalizeFrame();
         // Handle errors from rendering

@@ -1,8 +1,12 @@
 #version 330
-// From Geometry Shader
-flat in vec3 Color;
-in vec3 Normal;
-in vec3 WorldPos;
+
+in VS_OUT {
+    vec3 WorldPos;
+    vec3 Normal;
+    vec2 TexCoord;
+    vec4 ShadowCoord;
+    mat3 TBN;
+} fs_in;
 
 // To Framebuffer
 out vec4 frag_color;

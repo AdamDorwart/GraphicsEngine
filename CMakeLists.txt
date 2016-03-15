@@ -43,11 +43,13 @@ set(SOURCES
     src/Texture/ParseTGATexture.cpp
 
     src/Mesh/Mesh.cpp
+    src/Mesh/Material.cpp
     src/Mesh/MeshSimplifier.cpp
     src/Mesh/ParseOFFMesh.cpp
     src/Mesh/ParseOBJMesh.cpp
 
     src/Shader/Shader.cpp
+    src/Shader/MaterialShader.cpp
     src/Shader/FlatShader.cpp
     src/Shader/NormalShader.cpp
     src/Shader/ShadowShader.cpp
@@ -59,8 +61,13 @@ find_package(OpenGL REQUIRED)
 add_definitions(-DLOG_FILE="log.txt"
                 -DSHADER_PATH="../src/Shader/"
                 -DMODEL_PATH="../media/model/"
+                -DMATERIAL_PATH="../media/material/"
                 -DTEXTURE_PATH="../media/texture/"
                 -DTHROW_CONTRACT)
+
+if (CMAKE_BUILD_TYPE MATCHES "Debug")
+  add_definitions(-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_ASSERT -D_GLIBCXX_DEBUG_PEDASSERT -D_GLIBCXX_DEBUG_VERIFY)
+endif()
 
 add_subdirectory(${GLFW_SOURCE_DIR} ${GLEW_SOURCE_DIR})
 

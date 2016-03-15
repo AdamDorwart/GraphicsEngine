@@ -79,10 +79,11 @@ bool ParseOFFMesh(Mesh* mesh, const char* filename) {
 			zmin = (d.p.z < zmin) ? (d.p.z) : (zmin);
 			zmax = (d.p.z > zmax) ? (d.p.z) : (zmax);
 
+			/*
 			d.c.x = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 			d.c.y = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 			d.c.z = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-
+			*/
 			d.v = 1.0; // Visible
 
 			mesh->buffer.push_back(d);

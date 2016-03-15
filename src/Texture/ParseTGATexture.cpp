@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <string>
+#include <vector>
 #include "Logger.h"
 
 typedef struct
@@ -14,7 +15,7 @@ typedef struct
     short int imageWidth;
     short int imageHeight;
     unsigned char bitCount;
-    unsigned char *imageData;
+    std::vector<unsigned char> imageData;
 } TGAFILE;
 
 bool ParseTGATexture(Texture* texture, const char* filename, unsigned int texType, unsigned int side) {
@@ -71,13 +72,13 @@ bool ParseTGATexture(Texture* texture, const char* filename, unsigned int texTyp
     imageSize = tgaFile.imageWidth * tgaFile.imageHeight * colorMode;
 
     // Allocate memory for the image data.
-    tgaFile.imageData = new unsigned char[imageSize];
+    tgaFile.imageData.resize(imageSize);
 
     // Read the image data.
-    fread(tgaFile.imageData, sizeof(unsigned char), imageSize, filePtr);
+    fread(&(tgaFile.imageData[0]), sizeof(unsigned char), imageSize, filePtr);
 
     // Change from BGR to RGB so OpenGL can read the image data.
-    for (int imageIdx = 0; imageIdx < imageSize; imageIdx += colorMode) {
+    for (int imageIdx = 0; imageIdx < imageSize - 2; imageIdx += colorMode) {
         colorSwap = tgaFile.imageData[imageIdx];
         tgaFile.imageData[imageIdx] = tgaFile.imageData[imageIdx + 2];
         tgaFile.imageData[imageIdx + 2] = colorSwap;
@@ -89,27 +90,18 @@ bool ParseTGATexture(Texture* texture, const char* filename, unsigned int texTyp
     texture->height = tgaFile.imageHeight;
     texture->size = imageSize;
     texture->data = tgaFile.imageData;
-
-    
-    //Set this texture to be the one we are working with
-    glBindTexture(texType, texture->id);
-    
+    texture->dataType = GL_UNSIGNED_BYTE;
     if (colorMode == 3) { //RGB
-        glTexImage2D(side, 0, GL_RGB, texture->width, texture->height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture->data);
+        texture->colorType = GL_RGB;
     } else if (colorMode == 4) { //RGBA
-        glTexImage2D(side, 0, GL_RGBA, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+        texture->colorType = GL_RGBA;
+    } else if (colorMode == 1) { // Monochrome
+        texture->colorType = GL_RED;
     } else {
-        LogError("Error parsing tga texture. Unsupported format.\n");
-        delete[] texture->data;
+        LogError("Error parsing tga texture. Unsupported color mode %d.\n", colorMode);
         return false;
     }
-
-    //Make sure no bytes are padded:
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexParameteri(texType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(texType, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     
-    //And unbind it!
-    glBindTexture(texType, 0);
+    texture->setup(texType, side);
     return true;
 }
