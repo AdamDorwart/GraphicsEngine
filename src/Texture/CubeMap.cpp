@@ -15,6 +15,58 @@ CubeMap::~CubeMap() {
 	
 }
 
+/*
+void CubeMap::createFBCubeMap(unsigned int width, unsigned int height, GLenum depthType, GLenum colorType) {
+	m_fboFront = new Framebuffer();
+	m_fboFront->init(width, height, depthType, colorType);
+	if (depthType != GL_NONE) {
+		m_front = m_fboFront->getDepthTexture();
+	} else {
+		m_front = m_fboFront->getColorTexture();
+	}
+
+	m_fboBack = new Framebuffer();
+	m_fboBack->init(width, height, depthType, colorType);
+	if (depthType != GL_NONE) {
+		m_back = m_fboBack->getDepthTexture();
+	} else {
+		m_back = m_fboBack->getColorTexture();
+	}
+
+	m_fboTop = new Framebuffer();
+	m_fboTop->init(width, height, depthType, colorType);
+	if (depthType != GL_NONE) {
+		m_top = m_fboTop->getDepthTexture();
+	} else {
+		m_top = m_fboTop->getColorTexture();
+	}
+
+	m_fboBottom = new Framebuffer();
+	m_fboBottom->init(width, height, depthType, colorType);
+	if (depthType != GL_NONE) {
+		m_bottom = m_fboBottom->getDepthTexture();
+	} else {
+		m_bottom = m_fboBottom->getColorTexture();
+	}
+
+	m_fboLeft = new Framebuffer();
+	m_fboLeft->init(width, height, depthType, colorType);
+	if (depthType != GL_NONE) {
+		m_left = m_fboLeft->getDepthTexture();
+	} else {
+		m_left = m_fboLeft->getColorTexture();
+	}
+
+	m_fboRight = new Framebuffer();
+	m_fboRight->init(width, height, depthType, colorType);
+	if (depthType != GL_NONE) {
+		m_right = m_fboRight->getDepthTexture();
+	} else {
+		m_right = m_fboRight->getColorTexture();
+	}
+	
+}*/
+
 void CubeMap::bind(void) {
     glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 }

@@ -23,6 +23,12 @@ class Material {
 		float m_specularExp;
 		vec3 m_ambientColor;
 
+		bool m_hasAmbientMap;
+		bool m_hasDiffuseMap;
+		bool m_hasSpecularMap;
+		bool m_hasBumpMap;
+		bool m_hasReflectionMap;
+
 	public:
 		Material();
 		~Material();
@@ -37,4 +43,10 @@ class Material {
 		void loadSpecular(const char* filename);
 		void loadBump(const char* filename);
 		void loadReflection(const char* filename);
+
+		void bindAmbient();
+		void bindDiffuse();
+		void bindSpecular();
+		void bindBump();
+		void bindReflection();
 };

@@ -14,9 +14,10 @@ FrameBuffer::~FrameBuffer() {
 	}
 }
 
-bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType, GLenum colorType) {
+bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType, GLenum colorType, GLenum texType) {
 	m_colorType = colorType;
 	m_depthType = depthType;
+	m_texType = texType;
 	m_width = width;
 	m_height = height;
 
@@ -56,14 +57,23 @@ bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType
 	if (colorType != GL_NONE) {
 		GLuint colorTex;
 		glGenTextures(1, &colorTex);
+		glBindTexture(texType, colorTex);
 
-		glBindTexture(GL_TEXTURE_2D, colorTex);
-		glTexImage2D(GL_TEXTURE_2D, 0, colorType, width, height, 0, colorF, colorT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTex, 0);
+		if (texType == GL_TEXTURE_CUBE_MAP) {
+			for (int side = 0; side < 6; side++) {
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + side, 0, colorType, width, height, 0, colorF, colorT, NULL);
+			}
+		} else {
+			glTexImage2D(GL_TEXTURE_2D, 0, colorType, width, height, 0, colorF, colorT, NULL);
+		}
+		glTexParameteri(texType, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(texType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(texType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(texType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		
+		if (texType != GL_TEXTURE_CUBE_MAP) {
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTex, 0);
+		}
 
 		GLenum DrawBuffers[] = { GL_COLOR_ATTACHMENT0 };
 
@@ -71,24 +81,33 @@ bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType
 
 		m_colorTex.setId(colorTex);
 		m_colorTex.setDimensions(width, height);
+		m_colorTex.setTexType(texType);
 	}
 
 	// Create the depth buffer 
 	if (depthType != GL_NONE) {
 		GLuint depthTex;
 		glGenTextures(1, &depthTex);
-		glBindTexture(GL_TEXTURE_2D, depthTex);
+		glBindTexture(texType, depthTex);
 
-		// depth
-		glTexImage2D(GL_TEXTURE_2D, 0, depthType, width, height, 0, depthF, depthT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		if (texType == GL_TEXTURE_CUBE_MAP) {
+			for (int side = 0; side < 6; side++) {
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + side, 0, depthType, width, height, 0, depthF, depthT, NULL);
+			}
+		} else {
+			glTexImage2D(GL_TEXTURE_2D, 0, depthType, width, height, 0, depthF, depthT, NULL);
+		}
+		glTexParameteri(texType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(texType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(texType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(texType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 		GLfloat borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
-		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+		glTexParameterfv(texType, GL_TEXTURE_BORDER_COLOR, borderColor);
+		glTexParameteri(texType, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
+		if (texType != GL_TEXTURE_CUBE_MAP) {
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
+		}
 
 		if (colorType == GL_NONE) {
 			glDrawBuffer(GL_NONE);
@@ -97,6 +116,7 @@ bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType
 
 		m_depthTex.setId(depthTex);
 		m_depthTex.setDimensions(width, height);
+		m_depthTex.setTexType(texType);
 	}
 
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -122,8 +142,15 @@ bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType
 	return true;
 }
 
-void FrameBuffer::bindForWriting() {
+void FrameBuffer::bindForWriting(GLenum texAttachment) {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
+	if (m_colorType == GL_NONE) {
+		m_depthTex.bindFB(GL_DEPTH_ATTACHMENT, texAttachment);
+	} else {
+		m_colorTex.bindFB(GL_COLOR_ATTACHMENT0, texAttachment);
+	}
+
 }
 
 void FrameBuffer::unbind() {

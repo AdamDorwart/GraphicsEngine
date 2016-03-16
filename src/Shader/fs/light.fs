@@ -27,7 +27,7 @@ uniform float shadowExpC;
 float near_plane = 0.1;
 float far_plane = 1000;
 
-float shadowBias = 0.005;
+float shadowBias = 0.00005;
 float shadowBiasClamp = 0.01;
 
 float reflection_threshold = 0.2;
@@ -60,10 +60,10 @@ void main () {
     vec4 specularColor = texture(SpecularMap, fs_in.TexCoord);
     float reflection = texture(ReflectionMap, fs_in.TexCoord).r;
 
-    vec3 normal = texture(BumpMap, fs_in.TexCoord).rgb;
-    normal = normalize(normal * 2.0 - 1.0);
-    normal = normalize(fs_in.TBN * normal); 
-    //vec3 normal = normalize(fs_in.Normal);
+    //vec3 normal = texture(BumpMap, fs_in.TexCoord).rgb;
+    //normal = normalize(normal * 2.0 - 1.0);
+    //normal = normalize(fs_in.TBN * normal); 
+    vec3 normal = normalize(fs_in.Normal);
     vec3 viewDir = normalize(gViewPos - fs_in.WorldPos);
     vec3 cubeMapReflect = reflect(viewDir, normal);
     vec3 envMap = texture(CubeMap, cubeMapReflect).rgb;
@@ -92,8 +92,8 @@ void main () {
     // Calculate shadow
     float bias = shadowBias*tan(acos(dot(normal, lightDir))); // cosTheta is dot( n,l ), clamped between 0 and 1
 	bias = clamp(bias, 0, shadowBiasClamp);
-    //float visible = ShadowCalculation(fs_in.ShadowCoord, bias);       
-    float visible = 1.0;
+    float visible = ShadowCalculation(fs_in.ShadowCoord, bias);       
+    //float visible = 1.0;
     vec3 lighting = ambient + visible * (diffuse + mix(specular, env, reflection));
 
     FragColor = vec4(lighting, 1.0f);

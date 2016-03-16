@@ -52,10 +52,14 @@ void handleGLerror() {
 int main(int argc, char *argv[]) {
 	Expects(Logger::start());
 
+	/*
 	int width = 2560;
 	int height = 1440;
+	*/
+	int width = 800;
+	int height = 600;
 
-	int shadowBufSize = 4096;
+	int shadowBufSize = 512;
 
 	// 1.0472 rad = 60 deg FOV
 	double fov = 1.0472;
@@ -132,15 +136,25 @@ int main(int argc, char *argv[]) {
 	//EnsuresMsg(ParseOBJMeshMaterial(meshObject, "nanosuit.obj"),
 	//		"Error: unable to continue without mesh. \n");
 	Mesh* meshA = new Mesh();
-	EnsuresMsg(meshA->parseFile("altair.obj"),
+	EnsuresMsg(meshA->parseFile("nanosuit.obj"),
 			   "Error: unable to continue without mesh. \n");
+	mat4* meshRef = meshA->getRefFrame();
+	*meshRef = rotate(*meshRef, 3.14f, vec3(0,1,0));
+
+	Mesh* meshB = new Mesh();
+	ExpectsMsg(meshB->parseFile("sponza_tri.obj"),
+			   "Error: Unable to continue without mesh.\n");
+	meshRef = meshB->getRefFrame();
+	*meshRef = scale(*meshRef, vec3(0.1,0.1,0.1));
+	//*meshRef = rotate(*meshRef, -1.56f, vec3(1,0,0));
 
 	SceneNode* transform = new SceneNode();
-	mat4* meshRef = inputHandler->selectedObject = transform->getRefFrame();
-	*meshRef = rotate(*meshRef, 3.14f, vec3(0,1,0));
-	*meshRef = scale(*meshRef, vec3(0.1,0.1,0.1));
+	inputHandler->selectedObject = transform->getRefFrame();
+	
+	//*meshRef = scale(*meshRef, vec3(0.1,0.1,0.1));
 
 	transform->addChild(meshA);
+	transform->addChild(meshB);
 	/*
 	for (auto& m : meshObject) {
 		LogInfo("Adding %s mesh to scene.\n", m.first.c_str());
@@ -155,7 +169,8 @@ int main(int argc, char *argv[]) {
 	vec3 lightPos = vec3(0, 10, -10);
 	vec3 lightLookAt = vec3(0, 0, 0);
 	vec3 lightUp = vec3(0, 1, 0);
-	lightFrame->setOrtho(-10,10,-10,10,-10,10);
+	//lightFrame->setOrtho(-100,100,-100,100,-100,100);
+	lightFrame->setPerspective(fov, shadowBufSize, shadowBufSize, nearPlane, 500);
 	
 	/*
 	Texture* texture = new Texture();
@@ -187,7 +202,8 @@ int main(int argc, char *argv[]) {
 	lightFrame->setCamera(lightPos, lightLookAt, lightUp);
 
 	FrameBuffer fbo;
-	fbo.init(shadowBufSize, shadowBufSize, GL_DEPTH_COMPONENT32F, GL_NONE);
+	fbo.init(shadowBufSize, shadowBufSize, GL_DEPTH_COMPONENT16, GL_NONE, GL_TEXTURE_2D);
+
 	ShadowShader* shadow = new ShadowShader();
 	LightShader* light = new LightShader();
 	NormalShader* normalShader = new NormalShader();
@@ -214,6 +230,7 @@ int main(int argc, char *argv[]) {
 
   		// Render next frame
     	vec2 dim = window.initFrame();
+    	//meshB->setVisible(false);
     	glCullFace(GL_FRONT);
     	shadow->enable();
 
@@ -227,6 +244,7 @@ int main(int argc, char *argv[]) {
 
     	shadow->disable();
 
+    	//meshB->setVisible(true);
     	glBindFramebuffer(GL_FRAMEBUFFER, 0);
     	// Enable Gamma correction for output FB
 		glEnable(GL_FRAMEBUFFER_SRGB); 

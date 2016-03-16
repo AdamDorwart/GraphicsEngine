@@ -11,10 +11,10 @@ class FrameBuffer
 
 		~FrameBuffer();
 
-		bool init(unsigned int width, unsigned int height, GLenum depthType, GLenum colorType);
+		bool init(unsigned int width, unsigned int height, GLenum depthType, GLenum colorType, GLenum texType);
 		
 		void unbind();
-		void bindForWriting();
+		void bindForWriting(GLenum = GL_TEXTURE_2D);
 
 		void bindForReading();
 		void bindForReading(GLenum textureUnit);
@@ -34,6 +34,7 @@ class FrameBuffer
 		Texture m_depthTex;
 		GLenum m_depthType;
 		GLenum m_colorType;
+		GLenum m_texType;
 };
 
 

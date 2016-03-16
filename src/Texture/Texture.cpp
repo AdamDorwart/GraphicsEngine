@@ -1,5 +1,4 @@
 #include "Texture.h"
-#include <GLFW/glfw3.h>
 #include <vector>
 #include <string>
 #include "Contract.h"
@@ -11,6 +10,7 @@ using namespace Util;
 
 Texture::Texture() {
     id = 0;
+    texType = GL_TEXTURE_2D;
 }
 
 Texture::~Texture() {
@@ -20,11 +20,15 @@ Texture::~Texture() {
 }
 
 void Texture::bind(void) {
-    glBindTexture(GL_TEXTURE_2D, id);
+    glBindTexture(texType, id);
+}
+
+void Texture::bindFB(GLenum attachment, GLenum point) {
+	glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, point, id, 0);
 }
 
 void Texture::unbind(void) {
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(texType, 0);
 }
 
 bool Texture::parseFile(const char* filename) {
@@ -47,15 +51,20 @@ void Texture::setId(unsigned int _id) {
 	id = _id;
 }
 
+void Texture::setTexType(unsigned int _type) {
+	texType = _type;
+}
+
 void Texture::setDimensions(unsigned int _width, unsigned int _height) {
 	width = _width;
 	height = _height;
 }
 
-void Texture::setup(unsigned int texType, unsigned int side) {
+void Texture::setup(unsigned int _texType, unsigned int side) {
 	EnsuresMsg(data.size() != 0,
 			   "Unable to build Texture with no data.\n");
 
+	texType = _texType;
 	glBindTexture(texType, id);
     
     glTexImage2D(side, 0, colorType, width, height, 0, colorType, dataType, &data[0]);

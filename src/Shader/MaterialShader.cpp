@@ -24,23 +24,23 @@ void MaterialShader::setupMaterialLocations() {
 void MaterialShader::bindMaterial(Material* material) {
 	glUniform1i(m_AmbientMapLocation, AMBIENT_UNIT);
 	glActiveTexture(GL_TEXTURE0 + AMBIENT_UNIT);
-	material->m_ambientMap.bind();
+	material->bindAmbient();
 
 	glUniform1i(m_DiffuseMapLocation, DIFFUSE_UNIT);
 	glActiveTexture(GL_TEXTURE0 + DIFFUSE_UNIT);
-	material->m_diffuseMap.bind();
+	material->bindDiffuse();
 
 	glUniform1i(m_SpecularMapLocation, SPECULAR_UNIT);
 	glActiveTexture(GL_TEXTURE0 + SPECULAR_UNIT);
-	material->m_specularMap.bind();
+	material->bindSpecular();
 
 	glUniform1i(m_BumpMapLocation, BUMP_UNIT);
 	glActiveTexture(GL_TEXTURE0 + BUMP_UNIT);
-	material->m_bumpMap.bind();
+	material->bindBump();
 
 	glUniform1i(m_ReflectionMapLocation, REFLECTION_UNIT);
 	glActiveTexture(GL_TEXTURE0 + REFLECTION_UNIT);
-	material->m_reflectionMap.bind();
+	material->bindReflection();
 
 	glUniform1f(m_SpecularExpLocation, material->m_specularExp);
 }

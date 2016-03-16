@@ -1,7 +1,11 @@
 #include "Material.h"
 
 Material::Material() {
-	
+	m_hasAmbientMap = false;
+	m_hasDiffuseMap = false;
+	m_hasSpecularMap = false;
+	m_hasBumpMap = false;
+	m_hasReflectionMap = false;
 }
 
 Material::~Material() {
@@ -24,17 +28,47 @@ void Material::setSpecularExp(float exponent) {
 
 
 void Material::loadAmbient(const char* filename) {
-	m_ambientMap.parseFile(filename);
+	m_hasAmbientMap = m_ambientMap.parseFile(filename);
 }
 void Material::loadDiffuse(const char* filename) {
-	m_diffuseMap.parseFile(filename);
+	m_hasDiffuseMap = m_diffuseMap.parseFile(filename);
 }
 void Material::loadSpecular(const char* filename) {
-	m_specularMap.parseFile(filename);
+	m_hasSpecularMap = m_specularMap.parseFile(filename);
 }
 void Material::loadBump(const char* filename) {
-	m_bumpMap.parseFile(filename);
+	m_hasBumpMap = m_bumpMap.parseFile(filename);
 }
 void Material::loadReflection(const char* filename) {
-	m_reflectionMap.parseFile(filename);
+	m_hasReflectionMap = m_reflectionMap.parseFile(filename);
+}
+
+void Material::bindAmbient() {
+	if (m_hasAmbientMap) {
+		m_ambientMap.bind();
+	}
+}
+
+void Material::bindDiffuse() {
+	if (m_hasDiffuseMap) {
+		m_diffuseMap.bind();
+	}
+}
+
+void Material::bindSpecular() {
+	if (m_hasSpecularMap) {
+		m_specularMap.bind();
+	}
+}
+
+void Material::bindBump() {
+	if (m_hasBumpMap) {
+		m_bumpMap.bind();
+	}
+}
+
+void Material::bindReflection() {
+	if (m_hasReflectionMap) {
+		m_reflectionMap.bind();
+	}
 }
