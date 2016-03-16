@@ -20,6 +20,7 @@ bool ParseOBJMesh(Mesh* mesh, const char* filename) {
 	IndexType face_i = 0;
 
 	std::unordered_map<Datum, IndexType, DatumHasher> vertices;
+	std::unordered_map<std::string, Material*> materials;
 
 	std::vector<vec3> positions;
 	std::vector<vec3> normals;
@@ -52,7 +53,22 @@ bool ParseOBJMesh(Mesh* mesh, const char* filename) {
 		if (tokens.size() == 0 || tokens.at(0).compare("#") == 0)
 			continue;
 
-		if(tokens.at(0).compare("v") == 0) {
+		if (tokens.at(0).compare("mtllib") == 0) {
+			// Load new Material Library
+			EnsuresMsg(ParseMTLMaterial(materials, tokens.at(1).c_str()),
+					  "Unable to load material file %s\n", tokens.at(1).c_str());
+
+		} else if (tokens.at(0).compare("usemtl") == 0) {
+			// Set current material
+			EnsuresMsg(materials.size() != 0,
+					  "Unable to parse OBJ: No materials loaded to use.\n");
+			
+			mesh->materials.push_back(std::make_pair(mesh->indices.size(), materials[tokens.at(1)]));
+
+		} else if (tokens.at(0).compare("o") == 0 || tokens.at(0).compare("g") == 0) {
+			// Mergeing all sub-objects together
+			// Ignore these
+		} else if(tokens.at(0).compare("v") == 0) {
 			//Parse the vertex line
 			float x = std::stof(tokens.at(1));
 			float y = std::stof(tokens.at(2));
@@ -77,7 +93,7 @@ bool ParseOBJMesh(Mesh* mesh, const char* filename) {
 			const std::string delim = "/";
 			int normPos, position, texCoord, normal;
 
-			Datum vertex[3];
+			std::array<Datum,3> vertex;
 			for (int i = 1; i <= 3; i++) {
 				faceTokens.clear();
 				faceTokens = split(tokens.at(i), '/', faceTokens);
@@ -122,7 +138,14 @@ bool ParseOBJMesh(Mesh* mesh, const char* filename) {
 				if (loc.second) {
 					vertex_i++;
 					mesh->vAdjs.push_back(VSet());
-				} 
+				} else {
+					Datum d = loc.first->first;
+					IndexType index = loc.first->second;
+					vertex[i-1].n = d.n + vertex[i-1].n;
+					vertices.erase(loc.first);
+					vertices.insert(std::pair<Datum, IndexType>(vertex[i-1], index));
+					// Something happens to t
+				}
 			}
 
 			IndexType v0 = vertices[vertex[0]];
@@ -136,7 +159,7 @@ bool ParseOBJMesh(Mesh* mesh, const char* filename) {
 
 			Triangle t;
 			t.v = {v0, v1, v2};
-			t.f = {NULL_INDEX, NULL_INDEX, NULL_INDEX};
+			//t.f = {NULL_INDEX, NULL_INDEX, NULL_INDEX};
 
 			mesh->faces.push_back(t);
         }
@@ -164,8 +187,6 @@ bool ParseOBJMesh(Mesh* mesh, const char* filename) {
 	}
 #endif
 
-	mesh->setupBuffers();
-	
     // Create Face Adjaceny in Indexed Face list
 	for (IndexType i = 0; i < mesh->faces.size(); i++) {
 		Triangle& face = mesh->faces[i];
@@ -198,15 +219,17 @@ bool ParseOBJMesh(Mesh* mesh, const char* filename) {
 		adjFaces.insert(v1v2Intersect.begin(), v1v2Intersect.end());
 		adjFaces.insert(v0v2Intersect.begin(), v0v2Intersect.end());
 
-		IndexType face_i = 0;
 		// Set all the adjacent faces, ignoring the occurance of itself.
 		for (auto adjFace : adjFaces) {
 			if (i != adjFace) {
-				face.f[face_i++] = adjFace;
+				face.f.push_back(adjFace);
 			}
 		}
 	}
 
+	mesh->createVertexTangents();
+	mesh->setupBuffers();
+	
 	return true;
 }
 

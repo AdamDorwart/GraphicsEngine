@@ -31,7 +31,7 @@ static const IndexType NULL_INDEX = std::numeric_limits<IndexType>::max();
 using VSet = std::set<IndexType>;
 struct Triangle {
 	std::array<IndexType,3> v; // Vertice indexes
-	std::array<IndexType,3> f; // Shares edges with
+	std::vector<IndexType> f; // Shares edges with
 };
 
 struct Datum {
@@ -59,7 +59,7 @@ struct DatumHasher {
         seed ^= hasher(d.p[0]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
         seed ^= hasher(d.p[1]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
         seed ^= hasher(d.p[2]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-
+/*
         seed ^= hasher(d.n[0]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
         seed ^= hasher(d.n[1]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
         seed ^= hasher(d.n[2]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
@@ -71,11 +71,11 @@ struct DatumHasher {
         seed ^= hasher(d.bn[0]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
         seed ^= hasher(d.bn[1]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
         seed ^= hasher(d.bn[2]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-
+*/
         seed ^= hasher(d.t[0]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
         seed ^= hasher(d.t[1]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
 
-        seed ^= hasher(d.v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+        //seed ^= hasher(d.v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
         return seed;
     }
 };
@@ -98,7 +98,7 @@ class Mesh : public SceneNode {
 		std::vector<IndexType> indices;
 		std::vector<Datum> buffer;
 
-		Material* material;
+		std::vector<std::pair<IndexType,Material*>> materials;
 
 		double maxWidth, maxHeight, maxDepth;
 		vec3 center;

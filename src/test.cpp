@@ -128,25 +128,31 @@ int main(int argc, char *argv[]) {
 	CubeMap* cubeMap = new CubeMap();
 	cubeMap->load("sky18.tga");
 
-	std::unordered_map<std::string, Mesh> meshObject;
-	EnsuresMsg(ParseOBJMeshMaterial(meshObject, "nanosuit.obj"),
-			"Error: unable to continue without mesh. \n");
+	//std::unordered_map<std::string, Mesh> meshObject;
+	//EnsuresMsg(ParseOBJMeshMaterial(meshObject, "nanosuit.obj"),
+	//		"Error: unable to continue without mesh. \n");
+	Mesh* meshA = new Mesh();
+	EnsuresMsg(meshA->parseFile("altair.obj"),
+			   "Error: unable to continue without mesh. \n");
 
 	SceneNode* transform = new SceneNode();
 	mat4* meshRef = inputHandler->selectedObject = transform->getRefFrame();
 	*meshRef = rotate(*meshRef, 3.14f, vec3(0,1,0));
+	*meshRef = scale(*meshRef, vec3(0.1,0.1,0.1));
 
+	transform->addChild(meshA);
+	/*
 	for (auto& m : meshObject) {
 		LogInfo("Adding %s mesh to scene.\n", m.first.c_str());
 		transform->addChild(&m.second);
-	}
+	}*/
 
 	scene->addChild(transform);
 
 	vec3 cameraPos = vec3(0, 5, -5);
 	vec3 cameraLookAt = vec3(0, 0, 0);
 	vec3 cameraUp = vec3(0, 1, 0);
-	vec3 lightPos = vec3(0, 5, -5);
+	vec3 lightPos = vec3(0, 10, -10);
 	vec3 lightLookAt = vec3(0, 0, 0);
 	vec3 lightUp = vec3(0, 1, 0);
 	lightFrame->setOrtho(-10,10,-10,10,-10,10);
@@ -255,13 +261,18 @@ int main(int argc, char *argv[]) {
 		Mesh::setMaterialShader(NULL);
 		light->disable();
 
-		cameraFrame->unsubscribe(light);
-		cameraFrame->subscribe(normalShader);
+		if (inputHandler->flatShading) {
+			cameraFrame->unsubscribe(light);
+			cameraFrame->subscribe(normalShader);
 
-		normalShader->enable();
-		cameraFrame->resetWorldMatrix();
-		scene->traverse(cameraFrame);
-		normalShader->disable();
+			normalShader->enable();
+			cameraFrame->resetWorldMatrix();
+			scene->traverse(cameraFrame);
+			normalShader->disable();
+
+			cameraFrame->unsubscribe(normalShader);
+			cameraFrame->subscribe(light);
+		}
 
         window.finalizeFrame();
         // Handle errors from rendering

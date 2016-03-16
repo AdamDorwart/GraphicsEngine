@@ -32,6 +32,7 @@ bool LightShader::init() {
 	}
 
 	m_WVPLocation = getUniformLocation("gWVP");
+	m_WVLocation = getUniformLocation("gWV");
 	m_DepthWVPLocation = getUniformLocation("gDepthWVP");
 	m_WorldLocation = getUniformLocation("gWorld");
 	m_LightPosLocation = getUniformLocation("gLightPos");
@@ -72,6 +73,10 @@ void LightShader::setDepthWVP(mat4 depthMVP) {
 	glUniformMatrix4fv(m_DepthWVPLocation, 1, GL_FALSE, value_ptr(depthWBias));
 }
 
+void LightShader::setWV(mat4 WV) {
+	glUniformMatrix4fv(m_WorldLocation, 1, GL_FALSE, value_ptr(WV));
+}
+
 void LightShader::setW(mat4 W) {
 	glUniformMatrix4fv(m_WorldLocation, 1, GL_FALSE, value_ptr(W));
 }
@@ -86,5 +91,6 @@ void LightShader::setViewPos(vec3 pos) {
 
 void LightShader::consume(CoordFrame* frame) {
 	setWVP(frame->getPCW());
+	setWV(frame->getCW());
 	setW(frame->getW());
 }

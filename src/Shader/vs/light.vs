@@ -7,6 +7,7 @@ layout (location = 4) in vec2 TexCoord;
 layout (location = 5) in float Visible;
 
 uniform mat4 gWVP;
+uniform mat4 gWV;
 uniform mat4 gDepthWVP;
 uniform mat4 gWorld;
 uniform vec3 gLightPos;
@@ -21,20 +22,21 @@ out VS_OUT {
 } vs_out;
 
 void main () {
+	vec3 tangent = normalize(gWorld * vec4(normalize(Tangent), 0.0)).xyz;
+	vec3 bitangent = normalize(gWorld * vec4(normalize(Bitangent), 0.0)).xyz;
+	vec3 normal = normalize(gWorld * vec4(normalize(Normal), 0.0)).xyz;
+
 	//Visible = Visible;
 	//vs_out.Color = Color;
 	vs_out.TexCoord = TexCoord;
 	vs_out.ShadowCoord = gDepthWVP * gWorld * vec4(Position, 1.0);
 	gl_Position = gWVP * vec4(Position, 1.0);
-	vs_out.Normal = (gWorld * vec4(Normal, 0.0)).xyz;
+	vs_out.Normal = normal;
 	vs_out.WorldPos = (gWorld * vec4(Position, 1.0)).xyz;
 
-	vec3 tangent = (gWorld * vec4(Tangent, 0.0)).xyz;
-	vec3 bitangent = (gWorld * vec4(Bitangent, 0.0)).xyz;
-	
-	vs_out.TBN = transpose(mat3(
+	vs_out.TBN = mat3(
 		tangent,
 		bitangent,
-		vs_out.Normal
-	));
+		normal
+	);
 }

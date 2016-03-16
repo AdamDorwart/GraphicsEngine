@@ -70,7 +70,12 @@ void main () {
     
     vec3 lightColor = vec3(1.0);
     // Ambient
-    vec3 ambient = lightColor * ambientColor.rgb;
+    vec3 ambient;
+    if (ambientColor.rgb == vec3(0,0,0)) {
+        ambient = lightColor * diffuseColor.rgb * 0.01f;
+    } else {
+        ambient = lightColor * ambientColor.rgb;
+    }
     // Diffuse
     vec3 lightDir = normalize(gLightPos - fs_in.WorldPos);
     float diff = max(dot(lightDir, normal), 0.0);

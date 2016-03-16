@@ -31,7 +31,9 @@ Mesh::Mesh(const Mesh& m) {
 }
 
 Mesh::~Mesh() {
-	delete material;
+	for (auto material : materials) {
+		delete material.second;
+	}
 	deleteBuffers();
 }
 
@@ -42,14 +44,17 @@ void Mesh::setMaterialShader(MaterialShader* shader) {
 void Mesh::draw() {
 	glBindVertexArray(VAO);
 
-	if (m_materialShader != NULL) {
-		m_materialShader->bindMaterial(material);
-	}
-
-	glDrawElements(GL_TRIANGLES, indices.size(), IndexTypeGL, (void*)0);
-
-	if (m_materialShader != NULL) {
-		m_materialShader->unbindMaterial(material);
+	if (materials.size() == 0 || m_materialShader == NULL) {
+		glDrawElements(GL_TRIANGLES, indices.size(), IndexTypeGL, (void*)0);
+	} else if (m_materialShader != NULL) {
+		for (int i = 0; i < materials.size()-1; i++) {
+			m_materialShader->bindMaterial(materials[i].second);
+			glDrawElements(GL_TRIANGLES, materials[i+1].first - materials[i].first, IndexTypeGL, (void*)(materials[i].first*sizeof(IndexType)));
+			m_materialShader->unbindMaterial(materials[i].second);
+		}
+		m_materialShader->bindMaterial(materials[materials.size()-1].second);
+		glDrawElements(GL_TRIANGLES, indices.size() - materials[materials.size()-1].first, IndexTypeGL, (void*)(materials[materials.size()-1].first*sizeof(IndexType)));
+		m_materialShader->unbindMaterial(materials[materials.size()-1].second);
 	}
 
 	glBindVertexArray(0);
@@ -111,8 +116,8 @@ void Mesh::createVertexTangents() {
 			if (dot(cross(buffer[face.v[j]].n, tangent_j), bitangent) < 0.0f){
 			    tangent_j = tangent_j * -1.0f;
 			}
-			buffer[face.v[0]].tn += tangent_j;
-			buffer[face.v[0]].bn += bitangent;
+			buffer[face.v[j]].tn += tangent_j;
+			buffer[face.v[j]].bn += bitangent;
 		}
 	}
 }
@@ -204,7 +209,8 @@ bool Mesh::parseFile(const char* filename) {
 }
 
 void Mesh::setMaterial(Material* _material) {
-	material = _material;
+	//material = _material;
+	materials.push_back(std::make_pair(0,_material));
 }
 
 double Mesh::getMaxWidth() {

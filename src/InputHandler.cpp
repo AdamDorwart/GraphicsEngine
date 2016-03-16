@@ -22,7 +22,7 @@ InputHandler::InputHandler(int _width, int _height, float _initialFov) {
 	up = vec3(0,1,0);
 	right = vec3(1,0,0);
 	
-	speed = 1.0;
+	speed = 20.0;
 	// horizontal angle : toward -Z
 	horizontalAngle = 3.14f;
 	// vertical angle : 0, look at the horizon

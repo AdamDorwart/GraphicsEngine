@@ -16,6 +16,7 @@ class LightShader : public MaterialShader, public CoordFrameListener {
 		virtual bool init();
 
 		void setWVP(mat4 wvp);
+		void setWV(mat4 wv);
 		void setDepthWVP(mat4 depthMVP);
 		void setW(mat4 w);
 		void setLightPos(vec3 pos);
@@ -28,6 +29,7 @@ class LightShader : public MaterialShader, public CoordFrameListener {
 
 		GLint m_DepthWVPLocation;
 		GLint m_WVPLocation;
+		GLint m_WVLocation;
 		GLint m_WorldLocation;
 		GLint m_LightPosLocation;
 		GLint m_ViewPosLocation;
