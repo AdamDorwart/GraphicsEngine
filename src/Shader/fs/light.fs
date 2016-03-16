@@ -19,7 +19,7 @@ uniform sampler2D SpecularMap;
 uniform sampler2D BumpMap;
 uniform sampler2D ReflectionMap;
 
-uniform sampler2D ShadowMap;
+uniform samplerCubeShadow ShadowMap;
 uniform samplerCube CubeMap;
 
 uniform float shadowExpC;
@@ -39,10 +39,13 @@ float LinearizeDepth(float depth) {
 
 float ShadowCalculation(vec4 shadowCoord, float bias) {
 	float visible = 1.0;
-	vec3 projCoords = shadowCoord.xyz / shadowCoord.w;
-	float lightDepth = texture(ShadowMap, projCoords.xy).r;
-	if (lightDepth < projCoords.z-bias &&
-		projCoords.z <= 1.0) {
+	//vec3 projCoords = shadowCoord.xyz / shadowCoord.w;
+	//float lightDepth = texture(ShadowMap, projCoords.xy).r;
+    float lightDepth = texture(ShadowMap, vec4(normalize(gLightPos - fs_in.WorldPos),1));
+	//if (lightDepth < projCoords.z-bias &&
+	//	projCoords.z <= 1.0) {
+    float dist = distance(fs_in.WorldPos, gLightPos);
+    if (lightDepth < dist - bias) {
 		visible = 0;
 		/*
 		if (lightDepth < projCoords.z-bias) {

@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
 	lightFrame->setCamera(lightPos, lightLookAt, lightUp);
 
 	FrameBuffer fbo;
-	fbo.init(shadowBufSize, shadowBufSize, GL_DEPTH_COMPONENT16, GL_NONE, GL_TEXTURE_2D);
+	fbo.init(shadowBufSize, shadowBufSize, GL_DEPTH_COMPONENT16, GL_NONE, GL_TEXTURE_CUBE_MAP);
 
 	ShadowShader* shadow = new ShadowShader();
 	LightShader* light = new LightShader();
@@ -238,11 +238,38 @@ int main(int argc, char *argv[]) {
     	fbo.bindForWriting();
 
     	glClear(GL_DEPTH_BUFFER_BIT);
-    	lightFrame->resetWorldMatrix();
 
-    	scene->traverse(lightFrame);
+    	for (int side = 0; side < 6; side++) {
+    		fbo.setAttachment(GL_TEXTURE_CUBE_MAP_POSITIVE_X + side);
+    		switch (GL_TEXTURE_CUBE_MAP_POSITIVE_X + side) {
+    			case GL_TEXTURE_CUBE_MAP_POSITIVE_X:
+    				lightLookAt = lightPos + vec3(1,0,0);
+    				break;
+    			case GL_TEXTURE_CUBE_MAP_NEGATIVE_X:
+    				lightLookAt = lightPos + vec3(-1,0,0);
+    				break;
+    			case GL_TEXTURE_CUBE_MAP_POSITIVE_Y:
+    				lightLookAt = lightPos + vec3(0,1,0);
+    				break;
+    			case GL_TEXTURE_CUBE_MAP_NEGATIVE_Y:
+    				lightLookAt = lightPos + vec3(0,-1,0);
+    				break;
+    			case GL_TEXTURE_CUBE_MAP_POSITIVE_Z:
+    				lightLookAt = lightPos + vec3(0,0,1);
+    				break;
+    			case GL_TEXTURE_CUBE_MAP_NEGATIVE_Z:
+    				lightLookAt = lightPos + vec3(0,0,-1);
+    				break;
+    		}
+    		
+    		lightFrame->setCamera(lightPos, lightLookAt, lightUp);
+    		lightFrame->resetWorldMatrix();
 
-    	shadow->disable();
+	    	scene->traverse(lightFrame);
+
+	    	shadow->disable();
+    	}
+    	
 
     	//meshB->setVisible(true);
     	glBindFramebuffer(GL_FRAMEBUFFER, 0);

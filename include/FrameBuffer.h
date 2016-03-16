@@ -14,7 +14,8 @@ class FrameBuffer
 		bool init(unsigned int width, unsigned int height, GLenum depthType, GLenum colorType, GLenum texType);
 		
 		void unbind();
-		void bindForWriting(GLenum = GL_TEXTURE_2D);
+		void bindForWriting();
+		void setAttachment(GLenum texAttachment = GL_TEXTURE_2D);
 
 		void bindForReading();
 		void bindForReading(GLenum textureUnit);

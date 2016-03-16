@@ -73,6 +73,8 @@ bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType
 		
 		if (texType != GL_TEXTURE_CUBE_MAP) {
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTex, 0);
+		} else {
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X, colorTex, 0);
 		}
 
 		GLenum DrawBuffers[] = { GL_COLOR_ATTACHMENT0 };
@@ -107,6 +109,8 @@ bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType
 
 		if (texType != GL_TEXTURE_CUBE_MAP) {
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
+		} else {
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X, depthTex, 0);
 		}
 
 		if (colorType == GL_NONE) {
@@ -142,15 +146,16 @@ bool FrameBuffer::init(unsigned int width, unsigned int height, GLenum depthType
 	return true;
 }
 
-void FrameBuffer::bindForWriting(GLenum texAttachment) {
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+void FrameBuffer::bindForWriting() {
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);	
+}
 
+void FrameBuffer::setAttachment(GLenum texAttachment) {
 	if (m_colorType == GL_NONE) {
 		m_depthTex.bindFB(GL_DEPTH_ATTACHMENT, texAttachment);
 	} else {
 		m_colorTex.bindFB(GL_COLOR_ATTACHMENT0, texAttachment);
 	}
-
 }
 
 void FrameBuffer::unbind() {
